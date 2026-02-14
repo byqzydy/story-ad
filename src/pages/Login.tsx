@@ -21,134 +21,129 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-950 flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute inset-0 grid-bg" />
+    <div className="min-h-screen bg-luxury-950 flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute inset-0 bg-ambient-gradient" />
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 -left-1/4 w-[400px] h-[400px] bg-neon-blue/10 rounded-full blur-[100px] animate-pulse-slow" />
-        <div className="absolute bottom-1/4 -right-1/4 w-[400px] h-[400px] bg-neon-purple/10 rounded-full blur-[100px] animate-pulse-slow" />
+        <div className="absolute top-[20%] left-[10%] w-[400px] h-[400px] bg-ambient-blue/5 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] bg-ambient-purple/5 rounded-full blur-[100px]" />
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-neon-blue via-neon-purple to-neon-pink rounded-2xl mb-4 shadow-neon">
-            <Zap className="w-8 h-8 text-white" />
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 w-full max-w-sm">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-ambient-blue to-ambient-purple rounded-xl mb-3">
+            <Zap className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-3xl font-display font-bold gradient-text">创影</h1>
-          <p className="text-dark-400 mt-2">让每个商家都能讲好自己的品牌故事</p>
+          <h1 className="text-2xl font-semibold gradient-text">创影</h1>
+          <p className="text-luxury-400 text-sm mt-1">让每个商家都能讲好自己的品牌故事</p>
         </div>
 
-        <div className="bg-dark-800/80 backdrop-blur-xl rounded-3xl shadow-card-dark border border-glass-border p-8">
-          <div className="flex gap-2 p-1 bg-dark-900 rounded-xl mb-6">
+        <div className="bg-luxury-800/60 backdrop-blur-md rounded-2xl border border-glass-border p-6">
+          <div className="flex gap-1 p-1 bg-luxury-900 rounded-xl mb-4">
             {[
-              { id: 'wechat', icon: MessageCircle, label: '微信登录', color: 'text-green-400' },
-              { id: 'phone', icon: Phone, label: '手机登录', color: 'text-neon-blue' },
-              { id: 'douyin', icon: Video, label: '抖音登录', color: 'text-white' }
+              { id: 'wechat', icon: MessageCircle, label: '微信', color: 'text-green-400' },
+              { id: 'phone', icon: Phone, label: '手机', color: 'text-ambient-blue' },
+              { id: 'douyin', icon: Video, label: '抖音', color: 'text-white' }
             ].map(method => (
               <button key={method.id} onClick={() => setLoginMethod(method.id as any)}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-all ${loginMethod === method.id ? 'bg-gradient-to-r from-neon-blue to-neon-purple text-white' : 'text-dark-400 hover:text-white'}`}>
-                <method.icon className={`w-5 h-5 ${loginMethod === method.id ? '' : method.color}`} />
-                <span className="hidden sm:inline text-sm">{method.label}</span>
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs transition-all ${loginMethod === method.id ? 'bg-luxury-700 text-white' : 'text-luxury-400 hover:text-luxury-200'}`}>
+                <method.icon className="w-3.5 h-3.5" />
+                <span>{method.label}</span>
               </button>
             ))}
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {loginMethod === 'wechat' && (
-              <div className="text-center py-8">
-                <div className="w-48 h-48 mx-auto bg-dark-900 rounded-2xl flex items-center justify-center mb-4 border border-glass-border">
+              <div className="text-center py-4">
+                <div className="w-36 h-36 mx-auto bg-luxury-900 rounded-xl flex items-center justify-center mb-3 border border-glass-border">
                   <div className="text-center">
-                    <MessageCircle className="w-16 h-16 text-green-400 mx-auto mb-2" />
-                    <p className="text-dark-400 text-sm">扫码登录</p>
+                    <MessageCircle className="w-12 h-12 text-green-400 mx-auto mb-1" />
+                    <p className="text-luxury-500 text-xs">扫码登录</p>
                   </div>
                 </div>
-                <p className="text-dark-500 text-sm mb-6">使用微信扫码即可快速登录</p>
-                <button onClick={handleLogin} className="w-full btn-primary">模拟微信登录</button>
+                <p className="text-luxury-500 text-xs mb-4">使用微信扫码即可快速登录</p>
+                <button onClick={handleLogin} className="w-full btn-primary text-sm py-2">模拟微信登录</button>
               </div>
             )}
 
             {loginMethod === 'phone' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-dark-300 mb-2">手机号</label>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="请输入手机号" className="input-field" />
+                  <label className="block text-xs font-medium text-luxury-400 mb-1.5">手机号</label>
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="请输入手机号" className="input-field text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-dark-300 mb-2">验证码</label>
+                  <label className="block text-xs font-medium text-luxury-400 mb-1.5">验证码</label>
                   <div className="flex gap-2">
-                    <input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="请输入验证码" className="input-field flex-1" />
-                    <button className="px-4 py-3 bg-dark-700 text-dark-300 rounded-xl hover:bg-dark-600 transition-colors border border-glass-border">获取验证码</button>
+                    <input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="验证码" className="input-field text-sm flex-1" />
+                    <button className="px-3 py-2 bg-luxury-700 text-luxury-300 rounded-xl text-xs hover:bg-luxury-600 transition-colors border border-glass-border">获取</button>
                   </div>
                 </div>
-                <button onClick={handleLogin} className="w-full btn-primary mt-6">登录</button>
+                <button onClick={handleLogin} className="w-full btn-primary text-sm py-2 mt-2">登录</button>
               </>
             )}
 
             {loginMethod === 'douyin' && (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 mx-auto bg-black rounded-2xl flex items-center justify-center mb-4 border border-glass-border">
-                  <Video className="w-8 h-8 text-white" />
+              <div className="text-center py-4">
+                <div className="w-14 h-14 mx-auto bg-black rounded-xl flex items-center justify-center mb-3 border border-glass-border">
+                  <Video className="w-6 h-6 text-white" />
                 </div>
-                <p className="text-dark-500 text-sm mb-6">授权抖音账号，快速发布广告</p>
-                <button onClick={handleLogin} className="w-full btn-primary">模拟抖音登录</button>
+                <p className="text-luxury-500 text-xs mb-4">授权抖音账号，快速发布广告</p>
+                <button onClick={handleLogin} className="w-full btn-primary text-sm py-2">模拟抖音登录</button>
               </div>
             )}
           </div>
 
-          <p className="text-center text-dark-500 text-sm mt-6">
-            登录即表示同意
-            <a href="#" className="text-neon-blue">《用户协议》</a>
-            和
-            <a href="#" className="text-neon-blue">《隐私政策》</a>
+          <p className="text-center text-luxury-500 text-xs mt-4">
+            登录即表示同意<a href="#" className="text-ambient-blue">《用户协议》</a>和<a href="#" className="text-ambient-blue">《隐私政策》</a>
           </p>
         </div>
 
-        <div className="text-center mt-6">
-          <button onClick={() => navigate('/')} className="text-dark-400 hover:text-white transition-colors">← 返回首页</button>
+        <div className="text-center mt-4">
+          <button onClick={() => navigate('/')} className="text-luxury-500 hover:text-white text-xs transition-colors">← 返回首页</button>
         </div>
       </motion.div>
 
       <AnimatePresence>
         {showGuide && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-dark-950/80 backdrop-blur-sm">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-dark-800 rounded-3xl shadow-card-dark border border-glass-border p-8 max-w-md w-full">
-              <button onClick={() => setShowGuide(false)} className="absolute top-4 right-4 p-2 hover:bg-dark-700 rounded-xl transition-colors">
-                <X className="w-5 h-5 text-dark-400" />
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-luxury-950/80 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-luxury-800 rounded-2xl border border-glass-border p-5 max-w-sm w-full">
+              <button onClick={() => setShowGuide(false)} className="absolute top-3 right-3 p-1.5 hover:bg-luxury-700 rounded-lg transition-colors">
+                <X className="w-4 h-4 text-luxury-400" />
               </button>
 
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-neon-purple to-neon-pink rounded-2xl mb-4 shadow-neon">
-                  <Gift className="w-8 h-8 text-white" />
+              <div className="text-center mb-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-ambient-purple to-ambient-pink rounded-xl mb-3">
+                  <Gift className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-2xl font-display font-bold text-white">欢迎来到创影！</h2>
-                <p className="text-dark-400 mt-2">新用户专享见面礼</p>
+                <h2 className="text-lg font-semibold text-white">欢迎来到创影！</h2>
+                <p className="text-luxury-400 text-sm mt-0.5">新用户专享见面礼</p>
               </div>
 
-              <div className="bg-gradient-to-r from-neon-blue via-neon-purple to-neon-pink rounded-2xl p-6 mb-6 text-white">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-white/80">免费生成次数</span>
-                  <span className="text-3xl font-bold">3次</span>
+              <div className="bg-gradient-to-r from-ambient-blue via-ambient-purple to-ambient-cyan rounded-xl p-4 mb-4 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/70 text-sm">免费生成次数</span>
+                  <span className="text-2xl font-semibold">3次</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-white/80">有效期限</span>
-                  <span className="font-semibold">永久有效</span>
+                  <span className="text-white/70 text-sm">有效期限</span>
+                  <span className="font-medium">永久有效</span>
                 </div>
               </div>
 
-              <div className="space-y-3 mb-6">
+              <div className="space-y-2 mb-4">
                 {['AI智能创作', '专业级广告视频', '多种模板选择'].map((feature, idx) => (
-                  <div key={idx} className="flex items-center gap-3 text-dark-300">
-                    <div className="w-5 h-5 bg-neon-blue/20 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-neon-blue" />
-                    </div>
+                  <div key={idx} className="flex items-center gap-2 text-luxury-300 text-sm">
+                    <div className="w-4 h-4 bg-ambient-blue/20 rounded-full flex items-center justify-center"><Check className="w-2.5 h-2.5 text-ambient-blue" /></div>
                     {feature}
                   </div>
                 ))}
               </div>
 
-              <button onClick={() => { setShowGuide(false); handleLogin() }} className="w-full btn-primary flex items-center justify-center gap-2">
-                立即领取 <ArrowRight className="w-5 h-5" />
+              <button onClick={() => { setShowGuide(false); handleLogin() }} className="w-full btn-primary text-sm py-2 flex items-center justify-center gap-1.5">
+                立即领取 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </motion.div>
           </motion.div>

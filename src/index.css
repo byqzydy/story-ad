@@ -1,23 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --color-neon-blue: #00d4ff;
-    --color-neon-purple: #8b5cf6;
-    --color-neon-pink: #ec4899;
-  }
-  
   html {
     scroll-behavior: smooth;
   }
   
   body {
-    @apply font-sans text-dark-100 bg-dark-950 antialiased m-0;
-    background: #030712;
+    @apply font-sans antialiased m-0;
+    background: #0B0D12;
+    color: #D4D8DE;
   }
   
   ::-webkit-scrollbar {
@@ -26,90 +21,59 @@
   }
   
   ::-webkit-scrollbar-track {
-    background: #111118;
+    background: #161A23;
   }
   
   ::-webkit-scrollbar-thumb {
-    background: #363648;
+    background: #363D4A;
     border-radius: 3px;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: #4a4a5e;
+    background: #5A6473;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply px-6 py-3 bg-gradient-to-r from-neon-blue via-brand-500 to-neon-purple
-           text-white font-semibold rounded-xl
-           shadow-glow-blue hover:shadow-glow-purple
-           hover:scale-105 transition-all duration-300
-           relative overflow-hidden;
-  }
-  
-  .btn-primary::before {
-    content: '';
-    @apply absolute inset-0 bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink;
-    @apply opacity-0 hover:opacity-20 transition-opacity duration-300;
+    @apply px-6 py-3 bg-primary text-white font-medium rounded-2xl
+           shadow-soft hover:shadow-glow
+           hover:scale-[1.02] transition-all duration-300;
   }
   
   .btn-secondary {
-    @apply px-6 py-3 bg-glass-white text-white font-semibold rounded-xl
+    @apply px-6 py-3 bg-glass-light text-luxury-100 font-medium rounded-2xl
            border border-glass-border backdrop-blur-sm
-           hover:bg-glass-whiteHover hover:border-glass-borderHover
+           hover:bg-glass-lighter hover:border-glass-borderLight
            transition-all duration-300;
   }
   
   .btn-ghost {
-    @apply px-4 py-2 text-dark-300 hover:text-white hover:bg-glass-whiteHover
-           rounded-lg transition-all duration-200;
+    @apply px-4 py-2 text-luxury-300 hover:text-white hover:bg-glass-light
+           rounded-xl transition-all duration-200;
   }
   
   .card {
-    @apply bg-dark-800/50 backdrop-blur-xl rounded-2xl 
-           border border-glass-border shadow-card-dark
-           hover:border-glass-borderHover hover:shadow-card-glow
+    @apply bg-luxury-800/50 backdrop-blur-md rounded-2xl 
+           border border-glass-border shadow-soft
+           hover:border-glass-borderLight hover:shadow-elegant
            transition-all duration-300;
   }
   
   .input-field {
-    @apply w-full px-4 py-3 bg-dark-800/50 border border-glass-border rounded-xl
-           text-white placeholder:text-dark-400
-           focus:border-neon-blue focus:ring-1 focus:ring-neon-blue/30
-           outline-none transition-all duration-200 backdrop-blur-sm;
+    @apply w-full px-4 py-3 bg-luxury-800/50 border border-glass-border rounded-2xl
+           text-white placeholder:text-luxury-400
+           focus:border-primary focus:ring-1 focus:ring-primary/20
+           outline-none transition-all duration-200;
   }
   
   .glass {
-    @apply bg-glass-white backdrop-blur-xl border border-glass-border;
+    @apply bg-glass backdrop-blur-md border border-glass-border;
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-neon-blue via-neon-purple to-neon-pink
+    @apply bg-gradient-to-r from-ambient-blue via-ambient-purple to-ambient-cyan
            bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient;
-  }
-  
-  .gradient-border {
-    background: linear-gradient(#111118, #111118) padding-box,
-                linear-gradient(135deg, #00d4ff, #8b5cf6, #ec4899) border-box;
-    border: 2px solid transparent;
-  }
-  
-  .glow-text {
-    text-shadow: 0 0 20px rgba(0, 212, 255, 0.5),
-                 0 0 40px rgba(139, 92, 246, 0.3);
-  }
-  
-  .grid-bg {
-    background-image: 
-      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-    background-size: 60px 60px;
-  }
-  
-  .focus-glow:focus {
-    @apply ring-2 ring-neon-blue/30;
-    box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1);
   }
 }
 
@@ -125,15 +89,5 @@
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
-  }
-  
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-neon-blue to-neon-purple;
-  }
-  
-  .shadow-neon {
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3),
-                0 0 40px rgba(139, 92, 246, 0.2),
-                0 0 60px rgba(236, 72, 153, 0.1);
   }
 }

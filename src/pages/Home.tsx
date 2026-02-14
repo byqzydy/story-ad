@@ -4,43 +4,40 @@ import { motion } from 'framer-motion'
 import { Play, Heart, Eye, Star, Zap, Shield, Sparkles, ChevronDown, Filter, User, LogOut } from 'lucide-react'
 import { useStore } from '../store'
 
-// Navbar
+// Navbar - Minimal Glassmorphism
 function Navbar() {
   const { user, isLoggedIn, logout } = useStore()
   const navigate = useNavigate()
   const [showUserMenu, setShowUserMenu] = useState(false)
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border/50">
+      <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-neon-blue via-neon-purple to-neon-pink rounded-xl flex items-center justify-center shadow-neon">
-            <Sparkles className="w-6 h-6 text-white" />
+          <div className="w-9 h-9 bg-gradient-to-br from-ambient-blue to-ambient-purple rounded-xl flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <span className="text-2xl font-display font-bold gradient-text">创影</span>
+          <span className="text-xl font-semibold text-white tracking-tight">创影</span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {isLoggedIn ? (
             <>
-              <button onClick={() => navigate('/create')} className="btn-primary flex items-center gap-2">
-                <Zap className="w-5 h-5" />
+              <button onClick={() => navigate('/create')} className="btn-primary flex items-center gap-2 text-sm">
+                <Zap className="w-4 h-4" />
                 立即创作
               </button>
               <div className="relative">
-                <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2 p-2 rounded-xl hover:bg-glass-whiteHover transition-colors">
-                  <img src={user?.avatar || 'https://i.pravatar.cc/100'} alt="avatar" className="w-8 h-8 rounded-full border-2 border-glass-border" />
-                  <ChevronDown className="w-4 h-4 text-dark-300" />
+                <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-glass-light transition-colors">
+                  <img src={user?.avatar || 'https://i.pravatar.cc/100'} alt="avatar" className="w-8 h-8 rounded-lg" />
                 </button>
                 {showUserMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-dark-800 rounded-xl shadow-card-dark border border-glass-border overflow-hidden">
-                    <button onClick={() => { navigate('/profile'); setShowUserMenu(false) }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-glass-whiteHover transition-colors text-left">
-                      <User className="w-4 h-4" />
-                      个人中心
+                  <div className="absolute right-0 top-full mt-2 w-44 bg-luxury-800 rounded-xl border border-glass-border shadow-soft overflow-hidden">
+                    <button onClick={() => { navigate('/profile'); setShowUserMenu(false) }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-glass-light transition-colors text-left text-sm text-luxury-200">
+                      <User className="w-4 h-4" />个人中心
                     </button>
-                    <button onClick={() => { logout(); setShowUserMenu(false) }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-glass-whiteHover transition-colors text-left text-red-400">
-                      <LogOut className="w-4 h-4" />
-                      退出登录
+                    <button onClick={() => { logout(); setShowUserMenu(false) }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-glass-light transition-colors text-left text-sm text-luxury-300">
+                      <LogOut className="w-4 h-4" />退出登录
                     </button>
                   </div>
                 )}
@@ -48,9 +45,9 @@ function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/pricing" className="btn-ghost">价格</Link>
-              <Link to="/login" className="btn-secondary">登录</Link>
-              <button onClick={() => navigate('/login')} className="btn-primary">立即创作</button>
+              <Link to="/pricing" className="btn-ghost text-sm">价格</Link>
+              <Link to="/login" className="btn-secondary text-sm">登录</Link>
+              <button onClick={() => navigate('/login')} className="btn-primary text-sm">立即创作</button>
             </>
           )}
         </div>
@@ -59,90 +56,80 @@ function Navbar() {
   )
 }
 
-// Hero
+// Hero Section
 function Hero() {
   const navigate = useNavigate()
   const projects = useStore((s) => s.projects)
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-dark-950">
-      <div className="absolute inset-0 grid-bg" />
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-luxury-950">
+      <div className="absolute inset-0 bg-ambient-gradient" />
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 -left-1/4 w-[500px] h-[500px] bg-neon-blue/10 rounded-full blur-[120px] animate-pulse-slow" />
-        <div className="absolute bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-neon-purple/10 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-neon-blue/5 via-neon-purple/5 to-transparent rounded-full" />
+        <div className="absolute top-[10%] left-[5%] w-[600px] h-[600px] bg-ambient-blue/5 rounded-full blur-[150px]" />
+        <div className="absolute bottom-[10%] right-[5%] w-[600px] h-[600px] bg-ambient-purple/5 rounded-full blur-[150px]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-40 text-center">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-glass-white rounded-full border border-glass-border mb-8">
-            <span className="w-2 h-2 bg-neon-blue rounded-full animate-pulse" />
-            <span className="text-sm text-dark-300">AI驱动 · 智能创作</span>
+      <div className="relative z-10 max-w-5xl mx-auto px-8 py-48 text-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-glass-light rounded-full border border-glass-border mb-6">
+            <span className="w-1.5 h-1.5 bg-ambient-blue rounded-full" />
+            <span className="text-xs text-luxury-300">AI驱动 · 智能创作</span>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-display font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-6xl font-semibold text-white mb-5 tracking-tight leading-tight">
             让每个商家都能
             <br />
-            <span className="gradient-text glow-text">讲好自己的品牌故事</span>
+            <span className="gradient-text">讲好自己的品牌故事</span>
           </h1>
-          <p className="text-xl md:text-2xl text-dark-300 mb-10 max-w-2xl mx-auto">
+          <p className="text-lg text-luxury-300 mb-8 max-w-xl mx-auto">
             5分钟完成创意策划，10分钟生成专业级广告视频
             <br />
-            <span className="text-dark-400">成本降低90%，效果媲美万元级制作</span>
+            <span className="text-luxury-400 text-sm">成本降低90%，效果媲美万元级制作</span>
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button onClick={() => navigate('/create')} className="btn-primary text-lg px-8 py-4">
-              <Zap className="w-6 h-6 inline-block mr-2" />
-              立即创作
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button onClick={() => navigate('/create')} className="btn-primary text-sm px-6 py-2.5">
+              <Zap className="w-4 h-4 inline-block mr-1.5" />立即创作
             </button>
-            <button className="btn-secondary text-lg px-8 py-4 border-glass-border">
-              查看案例
-            </button>
+            <button className="btn-secondary text-sm px-6 py-2.5">查看案例</button>
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }} className="mt-24">
-          <p className="text-dark-400 mb-6">最新优秀作品</p>
-          <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-4 justify-center">
-            {projects.slice(0, 4).map((project, idx) => (
-              <div key={project.id} className="flex-shrink-0 w-72 group cursor-pointer">
-                <div className="relative rounded-2xl overflow-hidden aspect-video mb-3 border border-glass-border">
-                  <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-dark-950/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                    <div className="flex items-center gap-3 text-white">
-                      <span className="flex items-center gap-1"><Eye className="w-4 h-4" />{project.views}</span>
-                      <span className="flex items-center gap-1"><Heart className="w-4 h-4" />{project.likes}</span>
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="mt-16">
+          <p className="text-xs text-luxury-400 uppercase tracking-wider mb-4">最新优秀作品</p>
+          <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 justify-center">
+            {projects.slice(0, 4).map((project) => (
+              <div key={project.id} className="flex-shrink-0 w-64 group cursor-pointer">
+                <div className="relative rounded-xl overflow-hidden aspect-video mb-3 border border-glass-border">
+                  <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                    <div className="flex items-center gap-3 text-white text-xs">
+                      <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{project.views}</span>
+                      <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{project.likes}</span>
                     </div>
                   </div>
-                  <div className="absolute top-3 right-3 bg-dark-800/80 backdrop-blur-sm px-2 py-1 rounded-lg text-white text-sm border border-glass-border">
+                  <div className="absolute top-2 right-2 px-2 py-0.5 bg-luxury-950/60 backdrop-blur-sm rounded text-white text-xs">
                     {project.duration}
                   </div>
                 </div>
-                <h3 className="text-white font-medium truncate">{project.title}</h3>
+                <h3 className="text-sm text-luxury-100 truncate">{project.title}</h3>
               </div>
             ))}
           </div>
         </motion.div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 py-8 bg-gradient-to-t from-dark-950 to-transparent">
-        <div className="max-w-4xl mx-auto px-6 flex flex-wrap justify-center gap-8">
-          <div className="flex items-center gap-2 text-dark-400">
-            <div className="w-10 h-10 bg-neon-blue/10 rounded-full flex items-center justify-center border border-glass-border">
-              <Zap className="w-5 h-5 text-neon-blue" />
-            </div>
+      <div className="absolute bottom-0 left-0 right-0 py-6 bg-gradient-to-t from-luxury-950 to-transparent">
+        <div className="max-w-3xl mx-auto px-8 flex flex-wrap justify-center gap-6">
+          <div className="flex items-center gap-2 text-luxury-400 text-sm">
+            <div className="w-8 h-8 bg-ambient-blue/10 rounded-lg flex items-center justify-center"><Zap className="w-4 h-4 text-ambient-blue" /></div>
             <span>已生成10万+广告</span>
           </div>
-          <div className="flex items-center gap-2 text-dark-400">
-            <div className="w-10 h-10 bg-neon-purple/10 rounded-full flex items-center justify-center border border-glass-border">
-              <Shield className="w-5 h-5 text-neon-purple" />
-            </div>
+          <div className="flex items-center gap-2 text-luxury-400 text-sm">
+            <div className="w-8 h-8 bg-ambient-purple/10 rounded-lg flex items-center justify-center"><Shield className="w-4 h-4 text-ambient-purple" /></div>
             <span>即梦AI官方合作</span>
           </div>
-          <div className="flex items-center gap-2 text-dark-400">
-            <div className="w-10 h-10 bg-neon-pink/10 rounded-full flex items-center justify-center border border-glass-border">
-              <Sparkles className="w-5 h-5 text-neon-pink" />
-            </div>
+          <div className="flex items-center gap-2 text-luxury-400 text-sm">
+            <div className="w-8 h-8 bg-ambient-cyan/10 rounded-lg flex items-center justify-center"><Sparkles className="w-4 h-4 text-ambient-cyan" /></div>
             <span>DeepSeek技术加持</span>
           </div>
         </div>
@@ -159,7 +146,7 @@ function WorksSection() {
   const [showFilters, setShowFilters] = useState(false)
 
   const categories = ['全部', '美妆', '食品', '服装', '3C', '宠物']
-  const styles = ['全部', '温馨', '搞笑', '励志', '清爽', '科技', '感人', '促销']
+  const styles = ['全部', '温馨', '搞笑', '励志', '清爽', '科技']
 
   const filteredProjects = projects.filter(p => {
     if (filterCategory !== '全部' && p.category !== filterCategory) return false
@@ -168,35 +155,33 @@ function WorksSection() {
   })
 
   return (
-    <section className="py-20 bg-dark-950">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-3xl font-display font-bold text-white">作品广场</h2>
-          <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 px-4 py-2 bg-dark-800 rounded-xl border border-glass-border hover:border-neon-blue transition-colors">
-            <Filter className="w-4 h-4" />
-            筛选
-            {(filterCategory !== '全部' || filterStyle !== '全部') && <span className="w-2 h-2 bg-neon-blue rounded-full" />}
+    <section className="py-16 bg-luxury-950">
+      <div className="max-w-6xl mx-auto px-8">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-semibold text-white">作品广场</h2>
+          <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 px-3 py-1.5 bg-luxury-800 rounded-xl border border-glass-border hover:border-ambient-blue/30 transition-colors text-sm text-luxury-300">
+            <Filter className="w-4 h-4" />筛选
           </button>
         </div>
 
         {showFilters && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-8 p-6 bg-dark-800/50 rounded-2xl border border-glass-border backdrop-blur-xl">
-            <div className="grid md:grid-cols-2 gap-6">
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-6 p-4 bg-luxury-800/50 rounded-xl border border-glass-border">
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-dark-300 mb-3">行业</label>
-                <div className="flex flex-wrap gap-2">
+                <label className="block text-xs font-medium text-luxury-400 mb-2 uppercase tracking-wider">行业</label>
+                <div className="flex flex-wrap gap-1.5">
                   {categories.map(cat => (
-                    <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-4 py-2 rounded-xl text-sm transition-colors ${filterCategory === cat ? 'bg-gradient-to-r from-neon-blue to-neon-purple text-white' : 'bg-dark-700 text-dark-300 hover:bg-dark-600'}`}>
+                    <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${filterCategory === cat ? 'bg-primary text-white' : 'bg-luxury-700 text-luxury-300 hover:bg-luxury-600'}`}>
                       {cat}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-dark-300 mb-3">风格</label>
-                <div className="flex flex-wrap gap-2">
+                <label className="block text-xs font-medium text-luxury-400 mb-2 uppercase tracking-wider">风格</label>
+                <div className="flex flex-wrap gap-1.5">
                   {styles.map(style => (
-                    <button key={style} onClick={() => setFilterStyle(style)} className={`px-4 py-2 rounded-xl text-sm transition-colors ${filterStyle === style ? 'bg-gradient-to-r from-neon-blue to-neon-purple text-white' : 'bg-dark-700 text-dark-300 hover:bg-dark-600'}`}>
+                    <button key={style} onClick={() => setFilterStyle(style)} className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${filterStyle === style ? 'bg-primary text-white' : 'bg-luxury-700 text-luxury-300 hover:bg-luxury-600'}`}>
                       {style}
                     </button>
                   ))}
@@ -206,35 +191,28 @@ function WorksSection() {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {filteredProjects.map((project, idx) => (
-            <motion.div key={project.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.05 }} className="card group cursor-pointer">
+            <motion.div key={project.id} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.03 }} className="card group cursor-pointer">
               <Link to={`/detail/${project.id}`}>
-                <div className="relative rounded-2xl overflow-hidden aspect-video mb-4 border border-glass-border">
-                  <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-dark-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-4">
-                    <div className="flex items-center gap-3 text-white">
-                      <span className="flex items-center gap-1 text-sm"><Eye className="w-4 h-4" />{project.views}</span>
-                      <span className="flex items-center gap-1 text-sm"><Heart className="w-4 h-4" />{project.likes}</span>
+                <div className="relative rounded-xl overflow-hidden aspect-video mb-3 border border-glass-border">
+                  <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
+                    <div className="flex items-center gap-2 text-white text-xs">
+                      <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{project.views}</span>
+                      <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{project.likes}</span>
                     </div>
-                    <div className="w-10 h-10 bg-glass-white rounded-full flex items-center justify-center">
-                      <Play className="w-5 h-5 text-white ml-1" />
-                    </div>
+                    <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center"><Play className="w-4 h-4 text-white ml-0.5" /></div>
                   </div>
-                  <div className="absolute top-3 right-3 bg-dark-800/80 backdrop-blur-sm px-2 py-1 rounded-lg text-white text-xs border border-glass-border">
-                    {project.duration}
-                  </div>
+                  <div className="absolute top-2 right-2 px-2 py-0.5 bg-luxury-950/60 backdrop-blur-sm rounded text-white text-xs">{project.duration}</div>
                 </div>
-                <h3 className="font-semibold text-white mb-2 truncate group-hover:text-neon-blue transition-colors">{project.title}</h3>
+                <h3 className="font-medium text-luxury-100 text-sm truncate mb-2">{project.title}</h3>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <img src={project.author.avatar} alt={project.author.name} className="w-6 h-6 rounded-full border border-glass-border" />
-                    <span className="text-sm text-dark-400">{project.author.name}</span>
+                  <div className="flex items-center gap-1.5">
+                    <img src={project.author.avatar} alt={project.author.name} className="w-5 h-5 rounded" />
+                    <span className="text-xs text-luxury-400">{project.author.name}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-dark-500">
-                    <Star className="w-3 h-3 text-yellow-400" />
-                    {project.category}
-                  </div>
+                  <span className="text-xs text-luxury-500">{project.category}</span>
                 </div>
               </Link>
             </motion.div>
@@ -250,24 +228,20 @@ function TemplatesSection() {
   const templates = useStore((s) => s.templates)
 
   return (
-    <section className="py-20 bg-dark-900">
-      <div className="max-w-7xl mx-auto px-6">
-        <h2 className="text-3xl font-display font-bold text-white mb-10">热门模板</h2>
-        <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-4">
+    <section className="py-16 bg-luxury-900">
+      <div className="max-w-6xl mx-auto px-8">
+        <h2 className="text-2xl font-semibold text-white mb-6">热门模板</h2>
+        <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
           {templates.map((template, idx) => (
-            <motion.div key={template.id} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.05 }} className="flex-shrink-0 w-72 group cursor-pointer">
-              <div className="relative rounded-2xl overflow-hidden aspect-[3/2] mb-4 border border-glass-border">
-                <img src={template.thumbnail} alt={template.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-dark-950/80 via-transparent to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <span className="inline-block px-3 py-1 bg-gradient-to-r from-neon-blue to-neon-purple rounded-full text-white text-xs mb-2">
-                    {template.category}
-                  </span>
-                  <h3 className="text-white font-semibold">{template.name}</h3>
+            <motion.div key={template.id} initial={{ opacity: 0, x: 10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.03 }} className="flex-shrink-0 w-56 group cursor-pointer">
+              <div className="relative rounded-xl overflow-hidden aspect-[4/3] mb-3 border border-glass-border">
+                <img src={template.thumbnail} alt={template.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 via-transparent to-transparent" />
+                <div className="absolute bottom-3 left-3 right-3">
+                  <span className="inline-block px-2 py-0.5 bg-primary/80 rounded text-white text-xs">{template.category}</span>
+                  <h3 className="text-white font-medium text-sm mt-1">{template.name}</h3>
                 </div>
-                <div className="absolute top-3 right-3 bg-dark-800/80 backdrop-blur-sm px-2 py-1 rounded-lg text-white text-xs border border-glass-border">
-                  {template.usageCount.toLocaleString()}次使用
-                </div>
+                <div className="absolute top-2 right-2 px-2 py-0.5 bg-luxury-950/60 backdrop-blur-sm rounded text-white text-xs">{template.usageCount.toLocaleString()}次</div>
               </div>
             </motion.div>
           ))}
@@ -282,48 +256,36 @@ function PricingPreview() {
   const navigate = useNavigate()
 
   const plans = [
-    { name: '免费版', price: '¥0', period: '', features: ['3次/月', '15秒', '720P', '有水印'], highlight: false },
-    { name: '月度会员', price: '¥49', period: '/月', features: ['50次/月', '60秒', '1080P', '去水印', '高速通道', 'AI音效'], highlight: true },
-    { name: '年度会员', price: '¥299', period: '/年', features: ['100次+/月', '120秒', '2K', '去水印', '极速通道', '全库音效', '专属客服'], highlight: false }
+    { name: '免费版', price: '¥0', features: ['3次/月', '15秒', '720P', '有水印'] },
+    { name: '月度会员', price: '¥49', features: ['50次/月', '60秒', '1080P', '去水印', '高速通道'], highlight: true },
+    { name: '年度会员', price: '¥299', features: ['100次+/月', '120秒', '2K', '极速通道', '专属客服'] }
   ]
 
   return (
-    <section className="py-20 bg-dark-950 relative">
-      <div className="absolute inset-0 grid-bg opacity-30" />
-      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-neon-purple/10 rounded-full blur-[100px]" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-neon-blue/10 rounded-full blur-[100px]" />
-      
-      <div className="relative max-w-7xl mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-4">简单透明的定价</h2>
-          <p className="text-dark-400">选择最适合您的创作套餐</p>
+    <section className="py-16 bg-luxury-950 relative">
+      <div className="absolute inset-0 bg-ambient-gradient opacity-50" />
+      <div className="relative max-w-5xl mx-auto px-8">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2">简单透明的定价</h2>
+          <p className="text-luxury-400">选择最适合您的创作套餐</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-4">
           {plans.map((plan, idx) => (
-            <motion.div key={plan.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.1 }} className={`relative p-6 rounded-2xl backdrop-blur-xl ${plan.highlight ? 'bg-gradient-to-b from-neon-blue/20 to-neon-purple/20 border-2 border-neon-blue/50' : 'bg-dark-800/50 border border-glass-border'}`}>
-              {plan.highlight && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-neon-blue to-neon-purple text-white text-sm rounded-full">
-                  最受欢迎
-                </div>
-              )}
-              <h3 className="text-xl font-semibold text-white mb-2">{plan.name}</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">{plan.price}</span>
-                <span className="text-dark-400">{plan.period}</span>
-              </div>
-              <ul className="space-y-3 mb-6">
+            <motion.div key={plan.name} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.05 }} className={`relative p-5 rounded-2xl ${plan.highlight ? 'bg-luxury-800/80 border-2 border-primary/50' : 'bg-luxury-800/50 border border-glass-border'}`}>
+              {plan.highlight && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-primary text-white text-xs rounded-full">最受欢迎</div>}
+              <h3 className="text-lg font-medium text-white mb-1">{plan.name}</h3>
+              <div className="mb-4"><span className="text-3xl font-semibold text-white">{plan.price}</span></div>
+              <ul className="space-y-2 mb-5">
                 {plan.features.map(feature => (
-                  <li key={feature} className="flex items-center gap-2 text-dark-300">
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${plan.highlight ? 'bg-neon-blue/20' : 'bg-dark-700'}`}>
-                      <Sparkles className={`w-3 h-3 ${plan.highlight ? 'text-neon-blue' : 'text-dark-400'}`} />
+                  <li key={feature} className="flex items-center gap-2 text-xs text-luxury-300">
+                    <div className={`w-4 h-4 rounded-full flex items-center justify-center ${plan.highlight ? 'bg-primary/20' : 'bg-luxury-700'}`}>
+                      <Sparkles className={`w-2 h-2 ${plan.highlight ? 'text-primary' : 'text-luxury-500'}`} />
                     </div>
                     {feature}
                   </li>
                 ))}
               </ul>
-              <button onClick={() => navigate('/pricing')} className={`w-full py-3 rounded-xl font-semibold transition-all ${plan.highlight ? 'btn-primary' : 'btn-secondary'}`}>
-                查看详情
-              </button>
+              <button onClick={() => navigate('/pricing')} className={`w-full py-2 rounded-xl text-sm font-medium transition-all ${plan.highlight ? 'btn-primary' : 'btn-secondary'}`}>查看详情</button>
             </motion.div>
           ))}
         </div>
@@ -342,35 +304,31 @@ function Footer() {
   }
 
   return (
-    <footer className="bg-dark-900 py-16 border-t border-glass-border">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid md:grid-cols-5 gap-8 mb-12">
-          <div className="md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-neon-blue to-neon-purple rounded-xl flex items-center justify-center shadow-neon">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-display font-bold text-white">创影</span>
+    <footer className="bg-luxury-900 py-12 border-t border-glass-border/50">
+      <div className="max-w-6xl mx-auto px-8">
+        <div className="grid grid-cols-5 gap-6 mb-8">
+          <div className="col-span-1">
+            <Link to="/" className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-ambient-blue to-ambient-purple rounded-lg flex items-center justify-center"><Sparkles className="w-4 h-4 text-white" /></div>
+              <span className="text-lg font-semibold text-white">创影</span>
             </Link>
-            <p className="text-dark-500 text-sm">AI驱动的故事化广告生成平台</p>
+            <p className="text-xs text-luxury-500">AI驱动的故事化广告生成平台</p>
           </div>
           {Object.entries(links).map(([title, items]) => (
             <div key={title}>
-              <h4 className="text-white font-semibold mb-4">{title}</h4>
-              <ul className="space-y-2">
-                {items.map(item => (
-                  <li key={item}><a href="#" className="text-dark-500 hover:text-neon-blue transition-colors text-sm">{item}</a></li>
-                ))}
+              <h4 className="text-sm font-medium text-luxury-200 mb-2">{title}</h4>
+              <ul className="space-y-1.5">
+                {items.map(item => <li key={item}><a href="#" className="text-xs text-luxury-500 hover:text-ambient-blue transition-colors">{item}</a></li>)}
               </ul>
             </div>
           ))}
         </div>
-        <div className="pt-8 border-t border-glass-border flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-dark-500 text-sm">© 2026 创影科技 All rights reserved.</p>
-          <div className="flex gap-6">
-            <a href="#" className="text-dark-500 hover:text-neon-blue transition-colors"><Shield className="w-5 h-5" /></a>
-            <a href="#" className="text-dark-500 hover:text-neon-purple transition-colors"><Sparkles className="w-5 h-5" /></a>
-            <a href="#" className="text-dark-500 hover:text-neon-pink transition-colors"><Zap className="w-5 h-5" /></a>
+        <div className="pt-6 border-t border-glass-border/30 flex flex-col md:flex-row justify-between items-center gap-3">
+          <p className="text-xs text-luxury-500">© 2026 创影科技 All rights reserved.</p>
+          <div className="flex gap-4">
+            <a href="#" className="text-luxury-500 hover:text-ambient-blue transition-colors"><Shield className="w-4 h-4" /></a>
+            <a href="#" className="text-luxury-500 hover:text-ambient-purple transition-colors"><Sparkles className="w-4 h-4" /></a>
+            <a href="#" className="text-luxury-500 hover:text-ambient-cyan transition-colors"><Zap className="w-4 h-4" /></a>
           </div>
         </div>
       </div>
@@ -380,7 +338,7 @@ function Footer() {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-dark-950">
+    <div className="min-h-screen bg-luxury-950">
       <Navbar />
       <Hero />
       <WorksSection />
