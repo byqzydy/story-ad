@@ -24,8 +24,8 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
         <div key={step.num} className="flex items-center">
           <div className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
             currentStep >= step.num 
-              ? 'bg-primary-500 text-white' 
-              : 'bg-dark-100 text-dark-400'
+              ? 'bg-neon-blue text-white' 
+              : 'bg-dark-700 text-dark-300'
           }`}>
             {currentStep > step.num ? (
               <Check className="w-4 h-4" />
@@ -69,7 +69,7 @@ function Step1StoryBasic({ onNext }: { onNext: () => void }) {
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">选择故事类型</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">选择故事类型</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {storyTypes.map(type => (
             <button
@@ -82,14 +82,14 @@ function Step1StoryBasic({ onNext }: { onNext: () => void }) {
               }`}
             >
               <span className="text-2xl mb-2 block">{type.icon}</span>
-              <span className="font-medium text-dark-800">{type.id}</span>
+              <span className="font-medium text-white">{type.id}</span>
             </button>
           ))}
         </div>
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">广告类型</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">广告类型</h3>
         <div className="grid md:grid-cols-2 gap-3">
           {adTypes.map(type => (
             <button
@@ -101,7 +101,7 @@ function Step1StoryBasic({ onNext }: { onNext: () => void }) {
                   : 'border-dark-200 hover:border-primary-300'
               }`}
             >
-              <span className="font-medium text-dark-800 block">{type.id}</span>
+              <span className="font-medium text-white block">{type.id}</span>
               <span className="text-sm text-dark-500">{type.desc}</span>
             </button>
           ))}
@@ -109,7 +109,7 @@ function Step1StoryBasic({ onNext }: { onNext: () => void }) {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">目标时长</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">目标时长</h3>
         <div className="flex gap-3">
           {durations.map(dur => (
             <button
@@ -117,7 +117,7 @@ function Step1StoryBasic({ onNext }: { onNext: () => void }) {
               onClick={() => updateStoryConfig({ duration: dur })}
               className={`px-6 py-3 rounded-xl font-medium transition-all ${
                 storyConfig.duration === dur
-                  ? 'bg-primary-500 text-white'
+                  ? 'bg-neon-blue text-white'
                   : 'bg-dark-100 text-dark-600 hover:bg-dark-200'
               }`}
             >
@@ -128,7 +128,7 @@ function Step1StoryBasic({ onNext }: { onNext: () => void }) {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">目标平台</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">目标平台</h3>
         <div className="flex flex-wrap gap-2">
           {platforms.map(platform => (
             <button
@@ -141,7 +141,7 @@ function Step1StoryBasic({ onNext }: { onNext: () => void }) {
               }}
               className={`px-4 py-2 rounded-full transition-all ${
                 storyConfig.platforms.includes(platform)
-                  ? 'bg-primary-500 text-white'
+                  ? 'bg-neon-blue text-white'
                   : 'bg-dark-100 text-dark-600 hover:bg-dark-200'
               }`}
             >
@@ -167,7 +167,7 @@ function Step2CharacterProduct({ onNext, onPrev }: { onNext: () => void; onPrev:
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">故事主角</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">故事主角</h3>
         <div className="grid md:grid-cols-2 gap-6">
           <div className="border-2 border-dashed border-dark-300 rounded-2xl p-8 text-center hover:border-primary-500 transition-colors cursor-pointer relative">
             {storyConfig.characterImage ? (
@@ -195,7 +195,7 @@ function Step2CharacterProduct({ onNext, onPrev }: { onNext: () => void; onPrev:
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">产品信息</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">产品信息</h3>
         <div className="grid md:grid-cols-2 gap-6">
           <div className="border-2 border-dashed border-dark-300 rounded-2xl p-8 text-center hover:border-primary-500 transition-colors cursor-pointer relative">
             {storyConfig.productImage ? (
@@ -228,7 +228,7 @@ function Step2CharacterProduct({ onNext, onPrev }: { onNext: () => void; onPrev:
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">产品融合度</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">产品融合度</h3>
         <div className="flex items-center gap-4">
           <span className="text-dark-500">自然植入</span>
           <input type="range" min="0" max="100" value={storyConfig.fusionLevel} onChange={(e) => updateStoryConfig({ fusionLevel: parseInt(e.target.value) })} className="flex-1 h-2 bg-dark-200 rounded-full" />
@@ -262,21 +262,21 @@ function Step3SceneAudio({ onNext, onPrev }: { onNext: () => void; onPrev: () =>
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">场景设定</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">场景设定</h3>
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
           {scenes.map(scene => (
             <button key={scene} onClick={() => updateStoryConfig({ scene })} className={`py-3 rounded-xl border-2 transition-all ${storyConfig.scene === scene ? 'border-primary-500 bg-primary-50' : 'border-dark-200 hover:border-primary-300'}`}>
-              <span className="text-dark-800">{scene}</span>
+              <span className="text-white">{scene}</span>
             </button>
           ))}
         </div>
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">视觉风格</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">视觉风格</h3>
         <div className="flex flex-wrap gap-2">
           {styles.map(style => (
-            <button key={style} onClick={() => updateStoryConfig({ visualStyle: style })} className={`px-4 py-2 rounded-full transition-all ${storyConfig.visualStyle === style ? 'bg-primary-500 text-white' : 'bg-dark-100 text-dark-600 hover:bg-dark-200'}`}>
+            <button key={style} onClick={() => updateStoryConfig({ visualStyle: style })} className={`px-4 py-2 rounded-full transition-all ${storyConfig.visualStyle === style ? 'bg-neon-blue text-white' : 'bg-dark-100 text-dark-600 hover:bg-dark-200'}`}>
               {style}
             </button>
           ))}
@@ -284,7 +284,7 @@ function Step3SceneAudio({ onNext, onPrev }: { onNext: () => void; onPrev: () =>
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">背景音乐</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">背景音乐</h3>
         <div className="flex flex-wrap gap-2 mb-4">
           {moods.map(mood => (
             <button key={mood} onClick={() => updateStoryConfig({ music: mood })} className={`px-4 py-2 rounded-full transition-all ${storyConfig.music === mood ? 'bg-accent-500 text-white' : 'bg-dark-100 text-dark-600 hover:bg-dark-200'}`}>
@@ -296,12 +296,12 @@ function Step3SceneAudio({ onNext, onPrev }: { onNext: () => void; onPrev: () =>
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">配音设定</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">配音设定</h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {voices.map(voice => (
             <button key={voice.id} onClick={() => updateStoryConfig({ voice: voice.id })} className={`p-4 rounded-xl border-2 text-center transition-all ${storyConfig.voice === voice.id ? 'border-primary-500 bg-primary-50' : 'border-dark-200 hover:border-primary-300'}`}>
               <Mic className="w-6 h-6 mx-auto mb-2 text-dark-400" />
-              <span className="font-medium text-dark-800">{voice.name}</span>
+              <span className="font-medium text-white">{voice.name}</span>
               <span className="text-xs text-dark-500 block">{voice.style}</span>
             </button>
           ))}
@@ -330,19 +330,19 @@ function Step4StoryContent({ onNext, onPrev }: { onNext: () => void; onPrev: () 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
       <div>
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">创作模式</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">创作模式</h3>
         <div className="grid md:grid-cols-2 gap-4">
           <button onClick={() => setMode('ai')} className={`p-6 rounded-2xl border-2 text-left transition-all ${mode === 'ai' ? 'border-primary-500 bg-primary-50' : 'border-dark-200 hover:border-primary-300'}`}>
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center"><Wand2 className="w-5 h-5 text-primary-600" /></div>
-              <span className="font-semibold text-dark-800">AI全自动</span>
+              <span className="font-semibold text-white">AI全自动</span>
             </div>
             <p className="text-dark-500 text-sm">输入核心卖点，AI自动生成完整故事脚本</p>
           </button>
           <button onClick={() => setMode('manual')} className={`p-6 rounded-2xl border-2 text-left transition-all ${mode === 'manual' ? 'border-primary-500 bg-primary-50' : 'border-dark-200 hover:border-primary-300'}`}>
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-accent-100 rounded-xl flex items-center justify-center"><Sparkles className="w-5 h-5 text-accent-600" /></div>
-              <span className="font-semibold text-dark-800">专业编辑</span>
+              <span className="font-semibold text-white">专业编辑</span>
             </div>
             <p className="text-dark-500 text-sm">可视化分镜时间轴，完全掌控每个细节</p>
           </button>
@@ -351,7 +351,7 @@ function Step4StoryContent({ onNext, onPrev }: { onNext: () => void; onPrev: () 
 
       {mode === 'ai' && (
         <div>
-          <h3 className="text-lg font-semibold text-dark-800 mb-4">输入故事要点</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">输入故事要点</h3>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-dark-600 mb-2">核心卖点</label>
@@ -400,14 +400,14 @@ function Step5Generation({ onPrev }: { onPrev: () => void }) {
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
       <div className="bg-dark-50 rounded-2xl p-6">
-        <h3 className="text-lg font-semibold text-dark-800 mb-4">创作配置摘要</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">创作配置摘要</h3>
         <div className="grid md:grid-cols-2 gap-4 text-sm">
-          <div><span className="text-dark-500">故事类型：</span><span className="text-dark-800 font-medium">{storyConfig.storyType || '-'}</span></div>
-          <div><span className="text-dark-500">广告类型：</span><span className="text-dark-800 font-medium">{storyConfig.adType || '-'}</span></div>
-          <div><span className="text-dark-500">目标时长：</span><span className="text-dark-800 font-medium">{storyConfig.duration}</span></div>
-          <div><span className="text-dark-500">目标平台：</span><span className="text-dark-800 font-medium">{storyConfig.platforms.join(', ') || '-'}</span></div>
-          <div><span className="text-dark-500">视觉风格：</span><span className="text-dark-800 font-medium">{storyConfig.visualStyle || '-'}</span></div>
-          <div><span className="text-dark-500">配音：</span><span className="text-dark-800 font-medium">{storyConfig.voice}</span></div>
+          <div><span className="text-dark-500">故事类型：</span><span className="text-white font-medium">{storyConfig.storyType || '-'}</span></div>
+          <div><span className="text-dark-500">广告类型：</span><span className="text-white font-medium">{storyConfig.adType || '-'}</span></div>
+          <div><span className="text-dark-500">目标时长：</span><span className="text-white font-medium">{storyConfig.duration}</span></div>
+          <div><span className="text-dark-500">目标平台：</span><span className="text-white font-medium">{storyConfig.platforms.join(', ') || '-'}</span></div>
+          <div><span className="text-dark-500">视觉风格：</span><span className="text-white font-medium">{storyConfig.visualStyle || '-'}</span></div>
+          <div><span className="text-dark-500">配音：</span><span className="text-white font-medium">{storyConfig.voice}</span></div>
         </div>
       </div>
 
@@ -415,7 +415,7 @@ function Step5Generation({ onPrev }: { onPrev: () => void }) {
         {!isGenerating && progress === 0 ? (
           <>
             <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-accent-500 rounded-full flex items-center justify-center"><Zap className="w-12 h-12 text-white" /></div>
-            <h3 className="text-2xl font-semibold text-dark-800 mb-2">准备就绪</h3>
+            <h3 className="text-2xl font-semibold text-white mb-2">准备就绪</h3>
             <p className="text-dark-500 mb-6">点击开始生成您的专属广告视频</p>
             <button onClick={handleGenerate} className="btn-primary text-lg px-10 py-4">开始生成</button>
           </>
@@ -427,15 +427,15 @@ function Step5Generation({ onPrev }: { onPrev: () => void }) {
                 <circle cx="64" cy="64" r="56" stroke="url(#gradient)" strokeWidth="8" fill="none" strokeLinecap="round" strokeDasharray={351} strokeDashoffset={351 - (351 * progress) / 100} className="transition-all duration-200" />
                 <defs><linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#0ea5e9" /><stop offset="100%" stopColor="#d946ef" /></linearGradient></defs>
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center"><span className="text-2xl font-bold text-dark-800">{progress}%</span></div>
+              <div className="absolute inset-0 flex items-center justify-center"><span className="text-2xl font-bold text-white">{progress}%</span></div>
             </div>
-            <h3 className="text-xl font-semibold text-dark-800 mb-2">正在生成中...</h3>
+            <h3 className="text-xl font-semibold text-white mb-2">正在生成中...</h3>
             <p className="text-dark-500 flex items-center justify-center gap-2"><Clock className="w-4 h-4" />预计剩余时间 3-5 分钟</p>
           </>
         ) : (
           <>
             <div className="w-24 h-24 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center"><Check className="w-12 h-12 text-green-500" /></div>
-            <h3 className="text-2xl font-semibold text-dark-800 mb-2">生成完成！</h3>
+            <h3 className="text-2xl font-semibold text-white mb-2">生成完成！</h3>
             <p className="text-dark-500 mb-6">您的广告视频已生成完毕</p>
             <div className="flex justify-center gap-4">
               <button className="btn-primary flex items-center gap-2"><Play className="w-5 h-5" />预览视频</button>
@@ -466,11 +466,11 @@ export default function Create() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-50 to-dark-100">
-      <header className="bg-white border-b border-dark-200 sticky top-0 z-50">
+      <header className="bg-dark-950 border-b border-glass-border sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate('/')} className="p-2 hover:bg-dark-100 rounded-xl transition-colors"><ArrowLeft className="w-5 h-5 text-dark-600" /></button>
-            <h1 className="text-xl font-semibold text-dark-800">创作广告</h1>
+            <h1 className="text-xl font-semibold text-white">创作广告</h1>
           </div>
           <button onClick={() => navigate('/')} className="text-dark-500 hover:text-dark-700">退出</button>
         </div>
@@ -478,7 +478,7 @@ export default function Create() {
 
       <main className="max-w-5xl mx-auto px-6 py-8">
         <StepIndicator currentStep={currentStep} />
-        <div className="bg-white rounded-3xl shadow-lg p-8">
+        <div className="bg-dark-800/50 backdrop-blur-xl border border-glass-border p-8">
           <AnimatePresence mode="wait">
             <CurrentStepComponent key={currentStep} onNext={handleNext} onPrev={handlePrev} />
           </AnimatePresence>
