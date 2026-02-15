@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, MessageCircle, Phone, Video, Zap, Gift, ArrowRight, Check } from 'lucide-react'
+import { X, MessageCircle, Phone, Video, Zap, Gift, ArrowRight, Check, Bird } from 'lucide-react'
 import { useStore } from '../store'
 
 export default function Login() {
@@ -31,9 +31,9 @@ export default function Login() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-ambient-blue to-ambient-purple rounded-xl mb-3">
-            <Zap className="w-6 h-6 text-white" />
+            <Bird className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-semibold gradient-text">创影</h1>
+          <h1 className="text-2xl font-semibold gradient-text">鸿雁</h1>
           <p className="text-luxury-400 text-sm mt-1">让每个商家都能讲好自己的品牌故事</p>
         </div>
 
@@ -118,7 +118,7 @@ export default function Login() {
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-ambient-purple to-ambient-pink rounded-xl mb-3">
                   <Gift className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-lg font-semibold text-white">欢迎来到创影！</h2>
+                <h2 className="text-lg font-semibold text-white">欢迎来到鸿雁！</h2>
                 <p className="text-luxury-400 text-sm mt-0.5">新用户专享见面礼</p>
               </div>
 

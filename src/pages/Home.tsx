@@ -1,55 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Play, Heart, Eye, Star, Zap, Shield, Sparkles, ChevronDown, Filter, User, LogOut } from 'lucide-react'
+import { Play, Heart, Eye, Star, Zap, Shield, Sparkles, ChevronDown, Filter, User, LogOut, Bird } from 'lucide-react'
 import { useStore } from '../store'
+import LoginModal from '../components/LoginModal'
 
 // Navbar - Minimal Glassmorphism
 function Navbar() {
-  const { user, isLoggedIn, logout } = useStore()
   const navigate = useNavigate()
-  const [showUserMenu, setShowUserMenu] = useState(false)
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border/50">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <div className="w-9 h-9 bg-gradient-to-br from-ambient-blue to-ambient-purple rounded-xl flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
+            <Bird className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-semibold text-white tracking-tight">创影</span>
+          <span className="text-xl font-semibold text-white tracking-tight">鸿雁</span>
         </Link>
 
         <div className="flex items-center gap-3">
-          {isLoggedIn ? (
-            <>
-              <button onClick={() => navigate('/create')} className="btn-primary flex items-center gap-2 text-sm">
-                <Zap className="w-4 h-4" />
-                立即创作
-              </button>
-              <div className="relative">
-                <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-glass-light transition-colors">
-                  <img src={user?.avatar || 'https://i.pravatar.cc/100'} alt="avatar" className="w-8 h-8 rounded-lg" />
-                </button>
-                {showUserMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-44 bg-luxury-800 rounded-xl border border-glass-border shadow-soft overflow-hidden">
-                    <button onClick={() => { navigate('/profile'); setShowUserMenu(false) }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-glass-light transition-colors text-left text-sm text-luxury-200">
-                      <User className="w-4 h-4" />个人中心
-                    </button>
-                    <button onClick={() => { logout(); setShowUserMenu(false) }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-glass-light transition-colors text-left text-sm text-luxury-300">
-                      <LogOut className="w-4 h-4" />退出登录
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <Link to="/pricing" className="btn-ghost text-sm">价格</Link>
-              <Link to="/login" className="btn-secondary text-sm">登录</Link>
-              <button onClick={() => navigate('/login')} className="btn-primary text-sm">立即创作</button>
-            </>
-          )}
+          <button onClick={() => navigate('/create-guide')} className="btn-primary text-sm">开始创作</button>
         </div>
       </div>
     </nav>
@@ -60,6 +31,32 @@ function Navbar() {
 function Hero() {
   const navigate = useNavigate()
   const projects = useStore((s) => s.projects)
+  const { isLoggedIn, setShowLoginModal, setShowWelcomeGiftAfterLogin } = useStore()
+  const [topProjects, setTopProjects] = useState<typeof projects>([])
+
+  // Get top 10 most liked published projects, update every 2 hours
+  useEffect(() => {
+    const updateTopProjects = () => {
+      const publishedProjects = projects.filter(p => p.status === 'published')
+      const sorted = [...publishedProjects].sort((a, b) => b.likes - a.likes).slice(0, 10)
+      setTopProjects(sorted)
+    }
+
+    updateTopProjects()
+    
+    // Update every 2 hours
+    const interval = setInterval(updateTopProjects, 2 * 60 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [projects])
+
+  const handleCreateClick = () => {
+    if (!isLoggedIn) {
+      setShowWelcomeGiftAfterLogin(true)
+      setShowLoginModal(true)
+    } else {
+      navigate('/create-guide')
+    }
+  }
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-luxury-950">
@@ -87,34 +84,48 @@ function Hero() {
             <span className="text-luxury-400 text-sm">成本降低90%，效果媲美万元级制作</span>
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button onClick={() => navigate('/create')} className="btn-primary text-sm px-6 py-2.5">
+            <button onClick={handleCreateClick} className="btn-primary text-sm px-6 py-2.5">
               <Zap className="w-4 h-4 inline-block mr-1.5" />立即创作
             </button>
-            <button className="btn-secondary text-sm px-6 py-2.5">查看案例</button>
+            <button onClick={() => document.getElementById('works-section')?.scrollIntoView({ behavior: 'smooth' })} className="btn-secondary text-sm px-6 py-2.5">查看案例</button>
           </div>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="mt-16">
-          <p className="text-xs text-luxury-400 uppercase tracking-wider mb-4">最新优秀作品</p>
-          <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 justify-center">
-            {projects.slice(0, 4).map((project) => (
-              <div key={project.id} className="flex-shrink-0 w-64 group cursor-pointer">
-                <div className="relative rounded-xl overflow-hidden aspect-video mb-3 border border-glass-border">
-                  <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                    <div className="flex items-center gap-3 text-white text-xs">
-                      <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{project.views}</span>
-                      <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{project.likes}</span>
+          <p className="text-xs text-luxury-400 uppercase tracking-wider mb-4">热门精选作品</p>
+          <div className="relative overflow-hidden">
+            <div 
+              className="flex gap-4"
+              style={{
+                animation: 'scroll-left 60s linear infinite',
+                width: 'max-content'
+              }}
+            >
+              {[...topProjects, ...topProjects, ...topProjects].map((project, idx) => (
+                <Link key={`${project.id}-${idx}`} to={`/detail/${project.id}`} className="flex-shrink-0 w-64 group cursor-pointer">
+                  <div className="relative rounded-xl overflow-hidden aspect-video mb-3 border border-glass-border">
+                    <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                      <div className="flex items-center gap-3 text-white text-xs">
+                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{project.views}</span>
+                        <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{project.likes}</span>
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 px-2 py-0.5 bg-luxury-950/60 backdrop-blur-sm rounded text-white text-xs">
+                      {project.duration}
                     </div>
                   </div>
-                  <div className="absolute top-2 right-2 px-2 py-0.5 bg-luxury-950/60 backdrop-blur-sm rounded text-white text-xs">
-                    {project.duration}
-                  </div>
-                </div>
-                <h3 className="text-sm text-luxury-100 truncate">{project.title}</h3>
-              </div>
-            ))}
+                  <h3 className="text-sm text-luxury-100 truncate">{project.title}</h3>
+                </Link>
+              ))}
+            </div>
           </div>
+          <style>{`
+            @keyframes scroll-left {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-33.33%); }
+            }
+          `}</style>
         </motion.div>
       </div>
 
@@ -309,8 +320,8 @@ function Footer() {
         <div className="grid grid-cols-5 gap-6 mb-8">
           <div className="col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-ambient-blue to-ambient-purple rounded-lg flex items-center justify-center"><Sparkles className="w-4 h-4 text-white" /></div>
-              <span className="text-lg font-semibold text-white">创影</span>
+              <div className="w-8 h-8 bg-gradient-to-br from-ambient-blue to-ambient-purple rounded-lg flex items-center justify-center"><Bird className="w-4 h-4 text-white" /></div>
+              <span className="text-lg font-semibold text-white">鸿雁</span>
             </Link>
             <p className="text-xs text-luxury-500">AI驱动的故事化广告生成平台</p>
           </div>
@@ -324,7 +335,7 @@ function Footer() {
           ))}
         </div>
         <div className="pt-6 border-t border-glass-border/30 flex flex-col md:flex-row justify-between items-center gap-3">
-          <p className="text-xs text-luxury-500">© 2026 创影科技 All rights reserved.</p>
+          <p className="text-xs text-luxury-500">© 2026 鸿雁科技 All rights reserved.</p>
           <div className="flex gap-4">
             <a href="#" className="text-luxury-500 hover:text-ambient-blue transition-colors"><Shield className="w-4 h-4" /></a>
             <a href="#" className="text-luxury-500 hover:text-ambient-purple transition-colors"><Sparkles className="w-4 h-4" /></a>
@@ -341,10 +352,13 @@ export default function Home() {
     <div className="min-h-screen bg-luxury-950">
       <Navbar />
       <Hero />
-      <WorksSection />
+      <div id="works-section">
+        <WorksSection />
+      </div>
       <TemplatesSection />
       <PricingPreview />
       <Footer />
+      <LoginModal />
     </div>
   )
 }

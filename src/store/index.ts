@@ -10,6 +10,16 @@ export interface User {
   totalGenerations: number
   totalLikes: number
   totalViews: number
+  // 扩展个人资料
+  gender?: 'male' | 'female' | 'other'
+  age?: number
+  bio?: string
+  // 各字段单独更新记录
+  lastNameUpdate?: string
+  lastAvatarUpdate?: string
+  lastGenderUpdate?: string
+  lastAgeUpdate?: string
+  lastBioUpdate?: string
 }
 
 export interface AdProject {
@@ -42,6 +52,7 @@ interface AppState {
   isLoggedIn: boolean
   login: (user: User) => void
   logout: () => void
+  updateUser: (updates: Partial<User>, updatedFields?: string[]) => void
   
   // Create Flow
   currentStep: number
@@ -52,6 +63,8 @@ interface AppState {
     platforms: string[]
     character: string
     characterImage: string | null
+    character2: string
+    characterImage2: string | null
     productName: string
     productImage: string | null
     productDescription: string
@@ -77,6 +90,12 @@ interface AppState {
   // UI State
   isCreateModalOpen: boolean
   setCreateModalOpen: (open: boolean) => void
+  
+  // Login Modal
+  showLoginModal: boolean
+  setShowLoginModal: (show: boolean) => void
+  showWelcomeGiftAfterLogin: boolean
+  setShowWelcomeGiftAfterLogin: (show: boolean) => void
 }
 
 const defaultStoryConfig = {
@@ -86,6 +105,8 @@ const defaultStoryConfig = {
   platforms: [],
   character: '',
   characterImage: null as string | null,
+  character2: '',
+  characterImage2: null as string | null,
   productName: '',
   productImage: null as string | null,
   productDescription: '',
@@ -106,6 +127,18 @@ export const useStore = create<AppState>()(
       isLoggedIn: false,
       login: (user) => set({ user, isLoggedIn: true }),
       logout: () => set({ user: null, isLoggedIn: false }),
+      updateUser: (updates, updatedFields) => set((state) => {
+        if (!state.user) return { user: null }
+        
+        const fieldTimestamps: Record<string, string> = {}
+        if (updatedFields) {
+          updatedFields.forEach(field => {
+            fieldTimestamps[`last${field.charAt(0).toUpperCase()}${field.slice(1)}Update`] = new Date().toISOString()
+          })
+        }
+        
+        return { user: { ...state.user, ...updates, ...fieldTimestamps } }
+      }),
       
       // Create Flow
       currentStep: 1,
@@ -255,6 +288,12 @@ export const useStore = create<AppState>()(
       // UI State
       isCreateModalOpen: false,
       setCreateModalOpen: (open) => set({ isCreateModalOpen: open }),
+      
+      // Login Modal
+      showLoginModal: false,
+      setShowLoginModal: (show) => set({ showLoginModal: show }),
+      showWelcomeGiftAfterLogin: false,
+      setShowWelcomeGiftAfterLogin: (show) => set({ showWelcomeGiftAfterLogin: show }),
     }),
     {
       name: 'story-ad-storage',

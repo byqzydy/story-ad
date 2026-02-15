@@ -95,29 +95,35 @@ export default function Pricing() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-50 via-white to-dark-50">
+    <div className="min-h-screen bg-luxury-950">
+      <div className="absolute inset-0 bg-ambient-gradient opacity-20" />
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-[10%] left-[5%] w-[500px] h-[500px] bg-ambient-blue/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[10%] right-[5%] w-[500px] h-[500px] bg-ambient-purple/5 rounded-full blur-[120px]" />
+      </div>
+
       {/* Header */}
-      <header className="bg-white border-b border-dark-200">
+      <header className="relative glass">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => navigate('/')}
-              className="p-2 hover:bg-dark-100 rounded-xl transition-colors"
+              onClick={() => navigate('/create-guide')}
+              className="p-2 hover:bg-glass-light rounded-xl transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-dark-600" />
+              <ArrowLeft className="w-5 h-5 text-luxury-300" />
             </button>
-            <h1 className="text-xl font-semibold text-dark-800">会员套餐</h1>
+            <h1 className="text-xl font-semibold text-white">会员套餐</h1>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
+      <main className="relative z-10 max-w-7xl mx-auto px-6 py-12">
         {/* Main Plans */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-display font-bold text-dark-800 mb-4">
+          <h2 className="text-4xl font-display font-bold text-white mb-4">
             选择您的创作套餐
           </h2>
-          <p className="text-dark-500 text-lg">
+          <p className="text-luxury-400 text-lg">
             灵活的定价方案，满足不同创作需求
           </p>
         </div>
@@ -129,40 +135,40 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className={`relative bg-white rounded-3xl shadow-lg overflow-hidden ${
-                plan.highlight ? 'ring-2 ring-primary-500' : ''
+              className={`relative card overflow-hidden ${
+                plan.highlight ? 'border-ambient-blue shadow-glow' : 'border-glass-border'
               }`}
             >
               {plan.popular && (
-                <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary-500 to-accent-500 text-white text-center py-2 text-sm font-medium">
+                <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-ambient-blue to-ambient-purple text-white text-center py-2 text-sm font-medium">
                   👑 最受欢迎
                 </div>
               )}
               
               <div className={`p-6 ${plan.popular ? 'pt-12' : ''}`}>
-                <h3 className="text-xl font-semibold text-dark-800 mb-2">{plan.name}</h3>
-                <p className="text-dark-500 text-sm mb-4">{plan.description}</p>
+                <h3 className="text-xl font-semibold text-white mb-2">{plan.name}</h3>
+                <p className="text-luxury-400 text-sm mb-4">{plan.description}</p>
                 
                 <div className="mb-6">
                   {plan.originalPrice && (
-                    <span className="text-dark-400 line-through text-lg mr-2">
+                    <span className="text-luxury-500 line-through text-lg mr-2">
                       {plan.originalPrice}
                     </span>
                   )}
-                  <span className="text-4xl font-bold text-dark-800">{plan.price}</span>
-                  <span className="text-dark-500">{plan.period}</span>
+                  <span className="text-4xl font-bold gradient-text">{plan.price}</span>
+                  <span className="text-luxury-400">{plan.period}</span>
                 </div>
 
                 <ul className="space-y-3 mb-6">
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-center justify-between text-sm">
-                      <span className="text-dark-500">{feature.name}</span>
+                      <span className="text-luxury-400">{feature.name}</span>
                       <span className={`font-medium ${
                         feature.included === true 
-                          ? 'text-green-600' 
+                          ? 'text-green-400' 
                           : feature.included === false 
-                            ? 'text-red-500' 
-                            : 'text-dark-800'
+                            ? 'text-red-400' 
+                            : 'text-luxury-100'
                       }`}>
                         {feature.included === true && <Check className="w-4 h-4 inline mr-1" />}
                         {feature.included === false && <X className="w-4 h-4 inline mr-1" />}
@@ -175,8 +181,8 @@ export default function Pricing() {
                 <button 
                   className={`w-full py-3 rounded-xl font-semibold transition-all ${
                     plan.highlight
-                      ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:shadow-lg hover:shadow-primary-500/25'
-                      : 'bg-dark-100 text-dark-700 hover:bg-dark-200'
+                      ? 'btn-primary'
+                      : 'card border-glass-border text-luxury-300 hover:border-ambient-blue/50'
                   }`}
                 >
                   {plan.cta}
@@ -188,7 +194,7 @@ export default function Pricing() {
 
         {/* Add-on Services */}
         <div className="max-w-4xl mx-auto">
-          <h3 className="text-2xl font-semibold text-dark-800 text-center mb-8">
+          <h3 className="text-2xl font-semibold text-white text-center mb-8">
             增值服务
           </h3>
           <div className="grid md:grid-cols-2 gap-4">
@@ -198,18 +204,18 @@ export default function Pricing() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4"
+                className="card border-glass-border p-6 hover:border-ambient-purple/50 hover:shadow-glow transition-all flex items-center gap-4 cursor-pointer"
               >
-                <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center">
-                  <service.icon className="w-7 h-7 text-primary-600" />
+                <div className="w-14 h-14 bg-ambient-blue/20 rounded-2xl flex items-center justify-center border border-ambient-blue/30">
+                  <service.icon className="w-7 h-7 text-ambient-blue" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-dark-800">{service.name}</h4>
-                  <p className="text-dark-500 text-sm">{service.description}</p>
+                  <h4 className="font-semibold text-white">{service.name}</h4>
+                  <p className="text-luxury-400 text-sm">{service.description}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xl font-bold text-primary-600">{service.price}</p>
-                  <button className="text-sm text-primary-600 hover:underline">
+                  <p className="text-xl font-bold text-ambient-purple">{service.price}</p>
+                  <button className="text-sm text-ambient-purple hover:underline">
                     购买
                   </button>
                 </div>
@@ -220,7 +226,7 @@ export default function Pricing() {
 
         {/* FAQ */}
         <div className="max-w-3xl mx-auto mt-16">
-          <h3 className="text-2xl font-semibold text-dark-800 text-center mb-8">
+          <h3 className="text-2xl font-semibold text-white text-center mb-8">
             常见问题
           </h3>
           <div className="space-y-4">
@@ -242,9 +248,9 @@ export default function Pricing() {
                 a: '支持下载MP4(H.264)、GIF、WebM格式，满足不同使用场景。'
               }
             ].map((faq, idx) => (
-              <div key={idx} className="bg-white rounded-2xl p-6 shadow-sm">
-                <h4 className="font-semibold text-dark-800 mb-2">{faq.q}</h4>
-                <p className="text-dark-500">{faq.a}</p>
+              <div key={idx} className="card border-glass-border p-6">
+                <h4 className="font-semibold text-white mb-2">{faq.q}</h4>
+                <p className="text-luxury-400">{faq.a}</p>
               </div>
             ))}
           </div>
