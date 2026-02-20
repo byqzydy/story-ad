@@ -6,6 +6,7 @@ import Detail from './pages/Detail'
 import Pricing from './pages/Pricing'
 import Profile from './pages/Profile'
 import CreationGuide from './pages/CreationGuide'
+import AIAgent from './pages/AIAgent'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/create" element={<Create />} />
         <Route path="/create-guide" element={<CreationGuide />} />
+        <Route path="/ai-agent" element={<AIAgent />} />
         <Route path="/detail/:id" element={<Detail />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/profile" element={<Profile />} />

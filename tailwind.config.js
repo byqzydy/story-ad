@@ -25,6 +25,8 @@ export default {
           purple: '#7C3AED',
           cyan: '#06B6D4',
           pink: '#EC4899',
+          green: '#10B981',
+          emerald: '#059669',
         },
         glass: {
           DEFAULT: 'rgba(255, 255, 255, 0.03)',
