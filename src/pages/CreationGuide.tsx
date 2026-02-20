@@ -1,12 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Bird, Sparkles, Package, Megaphone, Tag, Crown, User, LogOut } from 'lucide-react'
+import { ArrowLeft, Sparkles, Package, Megaphone, Tag, Crown, User, LogOut, Layers, Bot } from 'lucide-react'
 import { useStore } from '../store'
 import { useState } from 'react'
 import LoginModal from '../components/LoginModal'
 
 // Navbar for Creation Guide Page
-function Navbar() {
+function Navbar({ creationMode, onModeChange }: { creationMode: string; onModeChange: (mode: string) => void }) {
   const { user, isLoggedIn, logout, setShowLoginModal } = useStore()
   const navigate = useNavigate()
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -15,11 +15,37 @@ function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-ambient-blue to-ambient-purple rounded-xl flex items-center justify-center">
-            <Bird className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-r from-ambient-blue via-ambient-purple to-ambient-cyan">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-semibold text-white tracking-tight">鸿雁</span>
+          <span className="text-xl font-semibold gradient-text tracking-tight">虹忆坊</span>
         </Link>
+
+        {/* Creation Mode Tabs */}
+        <div className="flex items-center gap-1 p-1 bg-luxury-800/50 rounded-xl border border-glass-border">
+          <button
+            onClick={() => onModeChange('free')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              creationMode === 'free'
+                ? 'bg-gradient-to-r from-ambient-blue to-ambient-purple text-white shadow-soft'
+                : 'text-luxury-400 hover:text-white hover:bg-luxury-700'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            自由混合
+          </button>
+          <button
+            onClick={() => onModeChange('ai')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              creationMode === 'ai'
+                ? 'bg-gradient-to-r from-ambient-blue to-ambient-purple text-white shadow-soft'
+                : 'text-luxury-400 hover:text-white hover:bg-luxury-700'
+            }`}
+          >
+            <Bot className="w-4 h-4" />
+            智能代理
+          </button>
+        </div>
 
         <div className="flex items-center gap-3">
           <Link to="/pricing" className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-ambient-purple to-ambient-pink text-white text-sm rounded-lg hover:opacity-90 transition-opacity">
@@ -35,7 +61,7 @@ function Navbar() {
                   <button onClick={() => { navigate('/profile'); setShowUserMenu(false) }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-glass-light transition-colors text-left text-sm text-luxury-200">
                     <User className="w-4 h-4" />个人中心
                   </button>
-                  <button onClick={() => { logout(); setShowUserMenu(false) }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-glass-light transition-colors text-left text-sm text-luxury-300">
+                  <button onClick={() => { logout(); navigate('/', { replace: true }); setShowUserMenu(false) }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-glass-light transition-colors text-left text-sm text-luxury-300">
                     <LogOut className="w-4 h-4" />退出登录
                   </button>
                 </div>
@@ -80,6 +106,19 @@ const creationTypes = [
 export default function CreationGuide() {
   const navigate = useNavigate()
   const { isLoggedIn, setShowLoginModal, setShowWelcomeGiftAfterLogin } = useStore()
+  const [creationMode, setCreationMode] = useState('free')
+
+  const handleModeChange = (mode: string) => {
+    setCreationMode(mode)
+    if (mode === 'ai') {
+      if (!isLoggedIn) {
+        setShowWelcomeGiftAfterLogin(true)
+        setShowLoginModal(true)
+        return
+      }
+      navigate('/ai-agent')
+    }
+  }
 
   const handleCreateClick = (type: string) => {
     if (!isLoggedIn) {
@@ -87,12 +126,12 @@ export default function CreationGuide() {
       setShowLoginModal(true)
       return
     }
-    navigate(`/create?type=${type}`)
+    navigate(`/create?type=${type}&mode=${creationMode}`)
   }
 
   return (
     <div className="min-h-screen bg-luxury-950">
-      <Navbar />
+      <Navbar creationMode={creationMode} onModeChange={handleModeChange} />
 
       <main className="pt-24 pb-12">
         <div className="max-w-6xl mx-auto px-8">

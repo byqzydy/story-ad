@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Play, Heart, Eye, Star, Zap, Shield, Sparkles, ChevronDown, Filter, User, LogOut, Bird } from 'lucide-react'
+import { Play, Heart, Eye, Star, Zap, Shield, Sparkles, ChevronDown, Filter, User, LogOut } from 'lucide-react'
 import { useStore } from '../store'
 import LoginModal from '../components/LoginModal'
 
@@ -13,10 +13,10 @@ function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-ambient-blue to-ambient-purple rounded-xl flex items-center justify-center">
-            <Bird className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-r from-ambient-blue via-ambient-purple to-ambient-cyan">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-semibold text-white tracking-tight">鸿雁</span>
+          <span className="text-xl font-semibold gradient-text tracking-tight">虹忆坊</span>
         </Link>
 
         <div className="flex items-center gap-3">
@@ -66,19 +66,18 @@ function Hero() {
         <div className="absolute bottom-[10%] right-[5%] w-[600px] h-[600px] bg-ambient-purple/5 rounded-full blur-[150px]" />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-8 py-48 text-center">
+      <div className="relative z-10 max-w-5xl mx-auto px-8 py-40 text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-glass-light rounded-full border border-glass-border mb-6">
             <span className="w-1.5 h-1.5 bg-ambient-blue rounded-full" />
             <span className="text-xs text-luxury-300">AI驱动 · 智能创作</span>
           </div>
           
-          <h1 className="text-4xl md:text-6xl font-semibold text-white mb-5 tracking-tight leading-tight">
-            让每个商家都能
-            <br />
-            <span className="gradient-text">讲好自己的品牌故事</span>
+          <h1 className="text-4xl md:text-6xl font-semibold text-white mb-5 tracking-tight leading-[1.3]">
+            <span className="block mb-4">用AI讲述你的品牌故事</span>
+            <span className="gradient-text block">最会讲故事的广告Agent</span>
           </h1>
-          <p className="text-lg text-luxury-300 mb-8 max-w-xl mx-auto">
+          <p className="text-lg text-luxury-300 mt-10 mb-8 max-w-xl mx-auto">
             5分钟完成创意策划，10分钟生成专业级广告视频
             <br />
             <span className="text-luxury-400 text-sm">成本降低90%，效果媲美万元级制作</span>
@@ -92,18 +91,18 @@ function Hero() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="mt-16">
-          <p className="text-xs text-luxury-400 uppercase tracking-wider mb-4">热门精选作品</p>
-          <div className="relative overflow-hidden">
+          <p className="text-xs text-luxury-400 uppercase tracking-wider mb-4 px-4">热门精选作品</p>
+          <div className="relative overflow-hidden -mx-8">
             <div 
-              className="flex gap-4"
+              className="flex gap-4 px-8"
               style={{
                 animation: 'scroll-left 60s linear infinite',
                 width: 'max-content'
               }}
             >
               {[...topProjects, ...topProjects, ...topProjects].map((project, idx) => (
-                <Link key={`${project.id}-${idx}`} to={`/detail/${project.id}`} className="flex-shrink-0 w-64 group cursor-pointer">
-                  <div className="relative rounded-xl overflow-hidden aspect-video mb-3 border border-glass-border">
+                <Link key={`${project.id}-${idx}`} to={`/detail/${project.id}`} className="flex-shrink-0 w-40 md:w-48 group cursor-pointer">
+                  <div className="relative rounded-xl overflow-hidden aspect-[9/16] mb-3 border border-glass-border">
                     <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                       <div className="flex items-center gap-3 text-white text-xs">
@@ -206,7 +205,7 @@ function WorksSection() {
           {filteredProjects.map((project, idx) => (
             <motion.div key={project.id} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.03 }} className="card group cursor-pointer">
               <Link to={`/detail/${project.id}`}>
-                <div className="relative rounded-xl overflow-hidden aspect-video mb-3 border border-glass-border">
+                <div className="relative rounded-xl overflow-hidden aspect-[9/16] mb-3 border border-glass-border">
                   <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
                     <div className="flex items-center gap-2 text-white text-xs">
@@ -320,8 +319,10 @@ function Footer() {
         <div className="grid grid-cols-5 gap-6 mb-8">
           <div className="col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-ambient-blue to-ambient-purple rounded-lg flex items-center justify-center"><Bird className="w-4 h-4 text-white" /></div>
-              <span className="text-lg font-semibold text-white">鸿雁</span>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gradient-to-r from-ambient-blue via-ambient-purple to-ambient-cyan">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-lg font-semibold gradient-text">虹忆坊</span>
             </Link>
             <p className="text-xs text-luxury-500">AI驱动的故事化广告生成平台</p>
           </div>
@@ -335,7 +336,7 @@ function Footer() {
           ))}
         </div>
         <div className="pt-6 border-t border-glass-border/30 flex flex-col md:flex-row justify-between items-center gap-3">
-          <p className="text-xs text-luxury-500">© 2026 鸿雁科技 All rights reserved.</p>
+          <p className="text-xs text-luxury-500">© 2026 虹忆坊科技 All rights reserved.</p>
           <div className="flex gap-4">
             <a href="#" className="text-luxury-500 hover:text-ambient-blue transition-colors"><Shield className="w-4 h-4" /></a>
             <a href="#" className="text-luxury-500 hover:text-ambient-purple transition-colors"><Sparkles className="w-4 h-4" /></a>

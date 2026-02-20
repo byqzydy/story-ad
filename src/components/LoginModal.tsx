@@ -31,7 +31,7 @@ export default function LoginModal() {
 
   const handleClaimGift = () => {
     setShowWelcomeGift(false)
-    navigate('/create')
+    navigate('/create-guide')
   }
 
   return (
@@ -147,7 +147,7 @@ export default function LoginModal() {
                 <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-ambient-purple to-ambient-pink rounded-xl mb-3">
                   <Gift className="w-7 h-7 text-white" />
                 </div>
-                <h2 className="text-xl font-semibold text-white">欢迎来到鸿雁！</h2>
+                <h2 className="text-xl font-semibold text-white">欢迎来到虹忆坊！</h2>
                 <p className="text-luxury-400 text-sm mt-1">新用户专享见面礼</p>
 
                 <div className="bg-gradient-to-r from-ambient-blue via-ambient-purple to-ambient-cyan rounded-xl p-4 my-4 text-white">

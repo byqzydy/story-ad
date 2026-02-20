@@ -76,7 +76,7 @@ export default function Detail() {
 
               {/* Waterermark */}
               <div className="absolute bottom-4 right-4 px-3 py-1 bg-luxury-950/60 backdrop-blur-sm rounded-lg text-white/60 text-sm border border-glass-border">
-                鸿雁AI生成
+                虹忆坊AI生成
               </div>
 
               {/* Progress Bar */}
