@@ -45,6 +45,25 @@ export interface StoryTemplate {
   usageCount: number
 }
 
+// AI Project type
+export interface AIProject {
+  id: string
+  name: string
+  createdAt: string
+  messages: { id: string; role: 'user' | 'ai'; content: string; timestamp: Date }[]
+  canvasData?: {
+    storyOutline?: string
+    script?: string[]
+    visualStatus?: 'pending' | 'generating' | 'completed'
+  }
+  // 上传的资源
+  assets?: {
+    productImages?: string[]  // 产品图
+    brandLogo?: string        // 品牌logo
+    scripts?: { name: string; url: string }[]  // 剧本文件
+  }
+}
+
 // Store State
 interface AppState {
   // Auth
@@ -59,6 +78,8 @@ interface AppState {
   storyConfig: {
     storyType: string
     adType: string
+    audienceGender: string
+    audienceAge: string
     duration: string
     platforms: string[]
     character: string
@@ -67,13 +88,19 @@ interface AppState {
     characterImage2: string | null
     productName: string
     productImage: string | null
+    productLogo: string | null
+    productImages: string[]
+    productTone: string
     productDescription: string
     fusionLevel: number
     scene: string
+    customScene: string
     visualStyle: string
+    customVisualStyle: string
     music: string
     voice: string
     voiceStyle: string
+    aspectRatio: string
     storyPrompt: string
   }
   setCurrentStep: (step: number) => void
@@ -96,11 +123,19 @@ interface AppState {
   setShowLoginModal: (show: boolean) => void
   showWelcomeGiftAfterLogin: boolean
   setShowWelcomeGiftAfterLogin: (show: boolean) => void
+
+  // AI Projects (智能代理项目)
+  aiProjects: AIProject[]
+  addAIProject: (project: AIProject) => void
+  updateAIProject: (id: string, updates: Partial<AIProject>) => void
+  deleteAIProject: (id: string) => void
 }
 
 const defaultStoryConfig = {
   storyType: '',
   adType: '',
+  audienceGender: '',
+  audienceAge: '',
   duration: '30s',
   platforms: [],
   character: '',
@@ -109,13 +144,19 @@ const defaultStoryConfig = {
   characterImage2: null as string | null,
   productName: '',
   productImage: null as string | null,
+  productLogo: null as string | null,
+  productImages: [] as string[],
+  productTone: '',
   productDescription: '',
   fusionLevel: 50,
   scene: '',
+  customScene: '',
   visualStyle: '',
+  customVisualStyle: '',
   music: '',
   voice: 'female',
   voiceStyle: 'warm',
+  aspectRatio: '9:16',
   storyPrompt: '',
 }
 
@@ -126,7 +167,12 @@ export const useStore = create<AppState>()(
       user: null,
       isLoggedIn: false,
       login: (user) => set({ user, isLoggedIn: true }),
-      logout: () => set({ user: null, isLoggedIn: false }),
+      logout: () => {
+        // Clear profile-related localStorage
+        localStorage.removeItem('profile_activeMenu')
+        localStorage.removeItem('profile_selectedProjectId')
+        set({ user: null, isLoggedIn: false })
+      },
       updateUser: (updates, updatedFields) => set((state) => {
         if (!state.user) return { user: null }
         
@@ -294,6 +340,20 @@ export const useStore = create<AppState>()(
       setShowLoginModal: (show) => set({ showLoginModal: show }),
       showWelcomeGiftAfterLogin: false,
       setShowWelcomeGiftAfterLogin: (show) => set({ showWelcomeGiftAfterLogin: show }),
+
+      // AI Projects
+      aiProjects: [],
+      addAIProject: (project) => set((state) => ({ 
+        aiProjects: [project, ...state.aiProjects] 
+      })),
+      updateAIProject: (id, updates) => set((state) => ({
+        aiProjects: state.aiProjects.map(p => 
+          p.id === id ? { ...p, ...updates } : p
+        )
+      })),
+      deleteAIProject: (id) => set((state) => ({
+        aiProjects: state.aiProjects.filter(p => p.id !== id)
+      })),
     }),
     {
       name: 'story-ad-storage',

@@ -3,17 +3,55 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ArrowLeft, User, Settings, LogOut, Play, Heart, Star, Eye,
-  Grid, List, Download, Trash2, MoreHorizontal, Video, FolderOpen, ChevronRight, AlertTriangle, X, Camera, Check
+  Grid, List, Download, Trash2, MoreHorizontal, Video, FolderOpen, ChevronRight, AlertTriangle, X, Camera, Check,
+  Image, FileText, Plus, Bot
 } from 'lucide-react'
 import { useStore } from '../store'
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, logout, projects, updateUser } = useStore()
-  const [activeMenu, setActiveMenu] = useState<'profile' | 'works' | 'assets' | 'favorites' | 'settings'>('works')
+  const { user, logout, projects, updateUser, aiProjects, deleteAIProject, updateAIProject } = useStore()
+  const [activeMenu, setActiveMenu] = useState<'profile' | 'works' | 'projects' | 'favorites' | 'settings'>('works')
   const [activeTab, setActiveTab] = useState<'published' | 'drafts'>('published')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<typeof aiProjects[0] | null>(null)
+  
+  // 从 localStorage 恢复状态
+  useEffect(() => {
+    const savedMenu = localStorage.getItem('profile_activeMenu') as typeof activeMenu | null
+    const savedProjectId = localStorage.getItem('profile_selectedProjectId')
+    
+    if (savedMenu) {
+      setActiveMenu(savedMenu)
+    }
+    
+    if (savedProjectId && aiProjects.length > 0) {
+      const project = aiProjects.find(p => p.id === savedProjectId)
+      if (project) {
+        setSelectedProject(project)
+      }
+    }
+  }, [aiProjects])
+
+  // 保存 activeMenu 到 localStorage
+  useEffect(() => {
+    localStorage.setItem('profile_activeMenu', activeMenu)
+  }, [activeMenu])
+
+  // 保存 selectedProject 到 localStorage
+  useEffect(() => {
+    if (selectedProject) {
+      localStorage.setItem('profile_selectedProjectId', selectedProject.id)
+    } else {
+      localStorage.removeItem('profile_selectedProjectId')
+    }
+  }, [selectedProject])
+  
+  // 文件上传 refs
+  const productImageInputRef = useRef<HTMLInputElement>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+  const scriptInputRef = useRef<HTMLInputElement>(null)
   
   // 个人资料编辑状态
   const [isEditing, setIsEditing] = useState(false)
@@ -143,6 +181,162 @@ export default function Profile() {
     setIsEditing(false)
   }
 
+  // 处理产品图上传
+  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedProject) return
+    const files = e.target.files
+    if (!files) return
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const currentAssets = selectedProject.assets || {}
+        const currentImages = currentAssets.productImages || []
+        updateAIProject(selectedProject.id, {
+          assets: {
+            ...currentAssets,
+            productImages: [...currentImages, reader.result as string]
+          }
+        })
+        // 从 store 获取最新数据更新 selectedProject
+        const updatedProject = aiProjects.find(p => p.id === selectedProject.id)
+        if (updatedProject) {
+          const newAssets = {
+            ...updatedProject.assets,
+            productImages: [...(updatedProject.assets?.productImages || []), reader.result as string]
+          }
+          setSelectedProject({ ...updatedProject, assets: newAssets })
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
+
+  // 处理Logo上传
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedProject) return
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const currentAssets = selectedProject.assets || {}
+      updateAIProject(selectedProject.id, {
+        assets: {
+          ...currentAssets,
+          brandLogo: reader.result as string
+        }
+      })
+      // 从 store 获取最新数据更新 selectedProject
+      const updatedProject = aiProjects.find(p => p.id === selectedProject.id)
+      if (updatedProject) {
+        setSelectedProject({ ...updatedProject, assets: { ...updatedProject.assets, brandLogo: reader.result as string } })
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  // 处理剧本上传
+  const handleScriptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedProject) return
+    const files = e.target.files
+    if (!files) return
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const currentAssets = selectedProject.assets || {}
+        const currentScripts = currentAssets.scripts || []
+        const newScript = { name: file.name, url: reader.result as string }
+        updateAIProject(selectedProject.id, {
+          assets: {
+            ...currentAssets,
+            scripts: [...currentScripts, newScript]
+          }
+        })
+        // 从 store 获取最新数据更新 selectedProject
+        const updatedProject = aiProjects.find(p => p.id === selectedProject.id)
+        if (updatedProject) {
+          setSelectedProject({ 
+            ...updatedProject, 
+            assets: { 
+              ...updatedProject.assets, 
+              scripts: [...(updatedProject.assets?.scripts || []), newScript] 
+            } 
+          })
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
+
+  // 删除产品图
+  const handleDeleteProductImage = (index: number) => {
+    if (!selectedProject) return
+    const currentAssets = selectedProject.assets || {}
+    const currentImages = currentAssets.productImages || []
+    const newImages = currentImages.filter((_, i) => i !== index)
+    updateAIProject(selectedProject.id, {
+      assets: {
+        ...currentAssets,
+        productImages: newImages
+      }
+    })
+    // 更新本地状态
+    setSelectedProject({
+      ...selectedProject,
+      assets: {
+        ...currentAssets,
+        productImages: newImages
+      }
+    })
+  }
+
+  // 删除Logo
+  const handleDeleteLogo = () => {
+    if (!selectedProject) return
+    const currentAssets = selectedProject.assets || {}
+    updateAIProject(selectedProject.id, {
+      assets: {
+        ...currentAssets,
+        brandLogo: undefined
+      }
+    })
+    // 更新本地状态
+    setSelectedProject({
+      ...selectedProject,
+      assets: {
+        ...currentAssets,
+        brandLogo: undefined
+      }
+    })
+  }
+
+  // 删除剧本
+  const handleDeleteScript = (index: number) => {
+    if (!selectedProject) return
+    const currentAssets = selectedProject.assets || {}
+    const currentScripts = currentAssets.scripts || []
+    const newScripts = currentScripts.filter((_, i) => i !== index)
+    updateAIProject(selectedProject.id, {
+      assets: {
+        ...currentAssets,
+        scripts: newScripts
+      }
+    })
+    // 更新本地状态
+    setSelectedProject({
+      ...selectedProject,
+      assets: {
+        ...currentAssets,
+        scripts: newScripts
+      }
+    })
+  }
+
   const filteredProjects = projects.filter(p => {
     if (activeMenu === 'favorites') return true // 收藏页面显示所有作品
     if (activeTab === 'published') return p.status === 'published'
@@ -161,7 +355,7 @@ export default function Profile() {
             </button>
             <h1 className="text-lg font-semibold text-white">个人中心</h1>
           </div>
-          <button onClick={() => { logout(); navigate('/create-guide') }} className="flex items-center gap-2 text-luxury-400 hover:text-red-400 transition-colors text-sm">
+          <button onClick={() => { logout(); navigate('/', { replace: true }) }} className="flex items-center gap-2 text-luxury-400 hover:text-red-400 transition-colors text-sm">
             <LogOut className="w-4 h-4" />退出登录
           </button>
         </div>
@@ -213,11 +407,11 @@ export default function Profile() {
               {[
                 { icon: User, label: '个人资料', key: 'profile' as const },
                 { icon: Video, label: '我的作品', key: 'works' as const },
-                { icon: FolderOpen, label: '资产管理', key: 'assets' as const },
+                { icon: FolderOpen, label: '项目管理', key: 'projects' as const },
                 { icon: Star, label: '我的收藏', key: 'favorites' as const },
                 { icon: Settings, label: '账号设置', key: 'settings' as const },
               ].map((item) => (
-                <button key={item.key} onClick={() => setActiveMenu(item.key)} className={`w-full flex items-center gap-3 px-4 py-3 transition-colors text-sm ${activeMenu === item.key ? 'bg-primary/10 text-primary border-l-2 border-primary' : 'text-luxury-300 hover:bg-glass-light'}`}>
+                <button key={item.key} onClick={() => { setActiveMenu(item.key); setSelectedProject(null) }} className={`w-full flex items-center gap-3 px-4 py-3 transition-colors text-sm ${activeMenu === item.key ? 'bg-primary/10 text-primary border-l-2 border-primary' : 'text-luxury-300 hover:bg-glass-light'}`}>
                   <item.icon className="w-4 h-4" /><span className="font-medium">{item.label}</span><ChevronRight className="w-3.5 h-3.5 ml-auto text-luxury-500" />
                 </button>
               ))}
@@ -254,11 +448,11 @@ export default function Profile() {
 
                 {/* Projects Grid */}
                 {viewMode === 'grid' ? (
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {filteredProjects.map((project, idx) => (
                       <motion.div key={project.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }} className="card group cursor-pointer overflow-hidden">
                         <Link to={`/detail/${project.id}`}>
-                          <div className="relative aspect-video border-b border-glass-border">
+                          <div className="relative aspect-[9/16] border-b border-glass-border">
                             <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                             <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
                               <div className="flex items-center gap-2 text-white text-xs">
@@ -329,11 +523,11 @@ export default function Profile() {
                 <div className="card p-1.5">
                   <span className="text-sm text-luxury-400 px-3 py-1.5">我的收藏</span>
                 </div>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {filteredProjects.map((project, idx) => (
                     <motion.div key={project.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }} className="card group cursor-pointer overflow-hidden">
                       <Link to={`/detail/${project.id}`}>
-                        <div className="relative aspect-video border-b border-glass-border">
+                        <div className="relative aspect-[9/16] border-b border-glass-border">
                           <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                           <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
                             <div className="flex items-center gap-2 text-white text-xs">
@@ -587,15 +781,200 @@ export default function Profile() {
               </>
             )}
 
-            {/* 资产管理 */}
-            {activeMenu === 'assets' && (
-              <div className="card p-12 text-center">
-                <div className="w-14 h-14 mx-auto mb-3 bg-luxury-800 rounded-xl flex items-center justify-center">
-                  <FolderOpen className="w-6 h-6 text-luxury-500" />
-                </div>
-                <h3 className="text-base font-medium text-white mb-1">资产管理</h3>
-                <p className="text-xs text-luxury-500">功能开发中...</p>
-              </div>
+            {/* 项目管理 */}
+            {activeMenu === 'projects' && (
+              <>
+                {!selectedProject ? (
+                  // Project list view
+                  <>
+                    <div className="card p-4">
+                      <h3 className="text-base font-medium text-white mb-4">项目管理</h3>
+                      {aiProjects.length === 0 ? (
+                        <div className="text-center py-8">
+                          <FolderOpen className="w-12 h-12 mx-auto text-luxury-600 mb-3" />
+                          <p className="text-sm text-luxury-500">暂无智能代理项目</p>
+                          <button 
+                            onClick={() => navigate('/ai-agent')}
+                            className="mt-4 text-sm text-primary hover:text-primary/80"
+                          >
+                            前往智能代理创建项目
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {aiProjects.map((project) => (
+                            <motion.div 
+                              key={project.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="card group cursor-pointer overflow-hidden border-2 border-transparent hover:border-primary transition-all relative"
+                              onClick={() => setSelectedProject(project)}
+                            >
+                              {/* Delete button - appears on hover at top-left */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  deleteAIProject(project.id)
+                                }}
+                                className="absolute top-2 left-2 z-10 p-1.5 bg-red-500/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                                title="删除项目"
+                              >
+                                <Trash2 className="w-4 h-4 text-white" />
+                              </button>
+                              <div className="relative aspect-video bg-luxury-800">
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <Bot className="w-12 h-12 text-luxury-600" />
+                                </div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs">查看详情</span>
+                                </div>
+                              </div>
+                              <div className="p-3">
+                                <h4 className="font-medium text-luxury-100 text-sm truncate">{project.name}</h4>
+                                <p className="text-xs text-luxury-500 mt-1">{new Date(project.createdAt).toLocaleDateString('zh-CN')}</p>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  // Project detail view - AI Project Assets
+                  <div className="space-y-4">
+                    <div className="card p-4">
+                      <div className="flex items-center gap-3 mb-4">
+                        <button onClick={() => setSelectedProject(null)} className="p-2 hover:bg-glass-light rounded-lg transition-colors">
+                          <ChevronRight className="w-5 h-5 text-luxury-400 rotate-180" />
+                        </button>
+                        <h3 className="text-base font-medium text-white">{selectedProject.name}</h3>
+                      </div>
+                      
+                      {/* Project Assets */}
+                      <div className="space-y-6">
+                        {/* Brand Logo */}
+                        <div className="bg-luxury-900/50 rounded-xl p-4">
+                          <h4 className="text-sm font-medium text-luxury-300 mb-3 flex items-center gap-2">
+                            <Image className="w-4 h-4" /> 品牌Logo
+                          </h4>
+                          <div className="flex flex-wrap gap-3">
+                            {selectedProject.assets?.brandLogo ? (
+                              <div className="relative group w-20 h-20">
+                                <img src={selectedProject.assets.brandLogo} alt="Logo" className="w-full h-full object-cover rounded-lg border border-luxury-600" />
+                                <button
+                                  onClick={() => handleDeleteLogo()}
+                                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="w-3 h-3 text-white" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => logoInputRef.current?.click()}
+                                className="w-20 h-20 rounded-lg border-2 border-dashed border-luxury-600 flex items-center justify-center hover:border-primary transition-colors"
+                              >
+                                <Plus className="w-6 h-6 text-luxury-500" />
+                              </button>
+                            )}
+                            <input
+                              ref={logoInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleLogoUpload}
+                              style={{ display: 'none' }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Product Images */}
+                        <div className="bg-luxury-900/50 rounded-xl p-4">
+                          <h4 className="text-sm font-medium text-luxury-300 mb-3 flex items-center gap-2">
+                            <Image className="w-4 h-4" /> 产品图片 ({selectedProject.assets?.productImages?.length || 0}/3)
+                          </h4>
+                          <div className="flex flex-wrap gap-3">
+                            {selectedProject.assets?.productImages?.map((img, index) => (
+                              <div key={index} className="relative group w-20 h-20">
+                                <img src={img} alt={`产品${index + 1}`} className="w-full h-full object-cover rounded-lg border border-luxury-600" />
+                                <button
+                                  onClick={() => handleDeleteProductImage(index)}
+                                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="w-3 h-3 text-white" />
+                                </button>
+                              </div>
+                            ))}
+                            {(!selectedProject.assets?.productImages || selectedProject.assets.productImages.length < 3) && (
+                              <>
+                                <button
+                                  onClick={() => productImageInputRef.current?.click()}
+                                  className="w-20 h-20 rounded-lg border-2 border-dashed border-luxury-600 flex items-center justify-center hover:border-primary transition-colors"
+                                >
+                                  <Plus className="w-6 h-6 text-luxury-500" />
+                                </button>
+                                <input
+                                  ref={productImageInputRef}
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  onChange={handleProductImageUpload}
+                                  style={{ display: 'none' }}
+                                />
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Scripts */}
+                        <div className="bg-luxury-900/50 rounded-xl p-4">
+                          <h4 className="text-sm font-medium text-luxury-300 mb-3 flex items-center gap-2">
+                            <FileText className="w-4 h-4" /> 剧本文件
+                          </h4>
+                          <div className="space-y-2">
+                            {selectedProject.assets?.scripts?.map((script, index) => (
+                              <div key={index} className="flex items-center gap-2 p-2 bg-luxury-800 rounded-lg group">
+                                <FileText className="w-5 h-5 text-luxury-400" />
+                                <span className="flex-1 text-sm text-luxury-300 truncate">{script.name}</span>
+                                <button
+                                  onClick={() => handleDeleteScript(index)}
+                                  className="p-1 text-luxury-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => scriptInputRef.current?.click()}
+                              className="w-full flex items-center justify-center gap-2 p-2 border-2 border-dashed border-luxury-600 rounded-lg hover:border-primary transition-colors"
+                            >
+                              <Plus className="w-4 h-4 text-luxury-500" />
+                              <span className="text-sm text-luxury-500">上传剧本</span>
+                            </button>
+                            <input
+                              ref={scriptInputRef}
+                              type="file"
+                              accept=".doc,.docx,.txt,.pdf"
+                              multiple
+                              onChange={handleScriptUpload}
+                              style={{ display: 'none' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Entry Button */}
+                    <div className="card p-4">
+                      <button 
+                        onClick={() => navigate(`/ai-agent?projectId=${selectedProject.id}`)}
+                        className="w-full flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-ambient-blue to-ambient-purple text-white rounded-xl hover:opacity-90 transition-opacity"
+                      >
+                        <Play className="w-5 h-5" />
+                        <span className="font-medium">进入创作</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             {/* 注销账号确认弹框 */}
@@ -634,7 +1013,7 @@ export default function Profile() {
                           onClick={() => {
                             logout()
                             setShowDeleteConfirm(false)
-                            navigate('/create-guide')
+                            navigate('/', { replace: true })
                           }}
                           className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition-colors"
                         >
