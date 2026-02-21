@@ -8,6 +8,7 @@ import {
   Monitor, Smartphone, User, Package, X
 } from 'lucide-react'
 import { useStore } from '../store'
+import { generateAdScript, type JiaobengInput } from '../skills/jiaobeng'
 
 // Step Indicator
 function StepIndicator({ currentStep }: { currentStep: number }) {
@@ -587,22 +588,51 @@ function Step3StoryContent({ onNext, onPrev, onSave }: StepProps) {
     setTimeout(() => setIsGenerating(false), 2000)
   }
 
-  const handleAICreateStory = () => {
+  const handleAICreateStory = async () => {
     setIsAICreating(true)
-    setTimeout(() => {
-      // Mock AI generated story content - put in first position
-      const aiStory = "在一个繁忙的都市里，主人公小李偶然间发现了一款改变生活的产品..."
-      setGeneratedScripts(prev => {
-        if (prev.length === 0) {
-          return [aiStory]
-        }
-        // Replace first script or add new one
-        const newScripts = [...prev]
-        newScripts[0] = aiStory
-        return newScripts
-      })
+    
+    try {
+      // 构建输入参数
+      const input: JiaobengInput = {
+        adCoreConcept: storyConfig.adCoreConcept || '',
+        adEndingEmotion: storyConfig.adEndingEmotion || '',
+        storyPrompt: storyConfig.storyPrompt || '',
+        productName: storyConfig.productName || '',
+        productTone: storyConfig.productTone || '',
+        productDescription: storyConfig.productDescription || '',
+        characterNames: storyConfig.characterNames || [],
+        characterDescriptions: storyConfig.characterDescriptions || [],
+        scene: storyConfig.scene || '不限',
+        visualStyle: storyConfig.visualStyle || '动画',
+        duration: storyConfig.duration || '30s',
+        audienceGender: storyConfig.audienceGender || '不限',
+        audienceAge: storyConfig.audienceAge || '不限'
+      }
+      
+      // 调用 Jiaobeng skill 生成剧本
+      const result = await generateAdScript(input)
+      
+      if (result.success && result.script) {
+        setGeneratedScripts(prev => {
+          if (prev.length === 0) {
+            return [result.script!]
+          }
+          // Replace first script
+          const newScripts = [...prev]
+          newScripts[0] = result.script!
+          return newScripts
+        })
+      } else {
+        // 如果生成失败，使用fallback
+        console.error('剧本生成失败:', result.error)
+        alert('剧本生成失败，请重试')
+      }
+    } catch (error) {
+      console.error('调用Jiaobeng技能出错:', error)
+      alert('生成剧本时发生错误')
+    } finally {
       setIsAICreating(false)
-    }, 2000)
+    }
   }
 
   const handleDeleteScript = (index: number) => {
