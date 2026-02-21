@@ -50,6 +50,7 @@ export interface AIProject {
   id: string
   name: string
   createdAt: string
+  updatedAt?: string  // 最近编辑时间
   messages: { id: string; role: 'user' | 'ai'; content: string; timestamp: Date }[]
   canvasData?: {
     storyOutline?: string
@@ -84,6 +85,9 @@ interface AppState {
     platforms: string[]
     character: string
     characterImage: string | null
+    characterImages: string[]  // 角色图片数组，最多3张
+    characterNames: string[]  // 角色名称数组，最多3个
+    characterDescriptions: string[]  // 角色描述数组，最多100字
     character2: string
     characterImage2: string | null
     productName: string
@@ -102,6 +106,8 @@ interface AppState {
     voiceStyle: string
     aspectRatio: string
     storyPrompt: string
+    adCoreConcept: string  // 广告核心创作概念，不超过30字
+    adEndingEmotion: string  // 广告结尾希望表达的情绪，不超过20字
   }
   setCurrentStep: (step: number) => void
   updateStoryConfig: (config: Partial<AppState['storyConfig']>) => void
@@ -132,7 +138,7 @@ interface AppState {
 }
 
 const defaultStoryConfig = {
-  storyType: '',
+  storyType: '不限',
   adType: '',
   audienceGender: '',
   audienceAge: '',
@@ -140,6 +146,9 @@ const defaultStoryConfig = {
   platforms: [],
   character: '',
   characterImage: null as string | null,
+  characterImages: [] as string[],
+  characterNames: [] as string[],
+  characterDescriptions: [] as string[],
   character2: '',
   characterImage2: null as string | null,
   productName: '',
@@ -149,7 +158,7 @@ const defaultStoryConfig = {
   productTone: '',
   productDescription: '',
   fusionLevel: 50,
-  scene: '',
+  scene: '不限',
   customScene: '',
   visualStyle: '',
   customVisualStyle: '',
@@ -158,6 +167,8 @@ const defaultStoryConfig = {
   voiceStyle: 'warm',
   aspectRatio: '9:16',
   storyPrompt: '',
+  adCoreConcept: '',
+  adEndingEmotion: '',
 }
 
 export const useStore = create<AppState>()(

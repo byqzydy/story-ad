@@ -126,7 +126,13 @@ export default function CreationGuide() {
       setShowLoginModal(true)
       return
     }
-    navigate(`/create?type=${type}&mode=${creationMode}`)
+    // Navigate to different create page based on type
+    const routes: Record<string, string> = {
+      product: '/create-product',
+      brand: '/create-brand',
+      promotion: '/create-promotion'
+    }
+    navigate(routes[type] || '/create-product')
   }
 
   return (

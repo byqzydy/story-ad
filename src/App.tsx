@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
 import Login from './pages/Login'
-import Create from './pages/Create'
+import CreateProduct from './pages/CreateProduct'
+import CreateBrand from './pages/CreateBrand'
+import CreatePromotion from './pages/CreatePromotion'
 import Detail from './pages/Detail'
 import Pricing from './pages/Pricing'
 import Profile from './pages/Profile'
@@ -14,7 +16,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/create" element={<Create />} />
+        <Route path="/create-product" element={<CreateProduct />} />
+        <Route path="/create-brand" element={<CreateBrand />} />
+        <Route path="/create-promotion" element={<CreatePromotion />} />
         <Route path="/create-guide" element={<CreationGuide />} />
         <Route path="/ai-agent" element={<AIAgent />} />
         <Route path="/detail/:id" element={<Detail />} />

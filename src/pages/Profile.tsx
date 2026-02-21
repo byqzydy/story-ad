@@ -789,20 +789,53 @@ export default function Profile() {
                   <>
                     <div className="card p-4">
                       <h3 className="text-base font-medium text-white mb-4">项目管理</h3>
-                      {aiProjects.length === 0 ? (
-                        <div className="text-center py-8">
-                          <FolderOpen className="w-12 h-12 mx-auto text-luxury-600 mb-3" />
-                          <p className="text-sm text-luxury-500">暂无智能代理项目</p>
-                          <button 
-                            onClick={() => navigate('/ai-agent')}
-                            className="mt-4 text-sm text-primary hover:text-primary/80"
-                          >
-                            前往智能代理创建项目
-                          </button>
+                      {/* 显示已保存的广告项目 */}
+                      {projects.length > 0 && (
+                        <div className="mb-6">
+                          <h4 className="text-sm text-luxury-400 mb-3">已保存的广告项目</h4>
+                          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {projects.map((project) => (
+                              <motion.div 
+                                key={project.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="card group cursor-pointer overflow-hidden border-2 border-transparent hover:border-primary transition-all relative"
+                                onClick={() => navigate(`/detail/${project.id}`)}
+                              >
+                                <div className="relative aspect-video bg-luxury-800">
+                                  <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs">查看详情</span>
+                                  </div>
+                                  <div className="absolute top-2 right-2 px-2 py-0.5 bg-luxury-950/60 backdrop-blur-sm rounded text-white text-xs">{project.duration}</div>
+                                </div>
+                                <div className="p-3">
+                                  <h4 className="font-medium text-luxury-100 text-sm truncate">{project.title}</h4>
+                                  <p className="text-xs text-luxury-500 mt-1">{project.createdAt}</p>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {aiProjects.map((project) => (
+                      )}
+                      
+                      {/* 显示智能代理项目 */}
+                      <div>
+                        <h4 className="text-sm text-luxury-400 mb-3">智能代理项目</h4>
+                        {aiProjects.length === 0 ? (
+                          <div className="text-center py-8">
+                            <FolderOpen className="w-12 h-12 mx-auto text-luxury-600 mb-3" />
+                            <p className="text-sm text-luxury-500">暂无智能代理项目</p>
+                            <button 
+                              onClick={() => navigate('/ai-agent')}
+                              className="mt-4 text-sm text-primary hover:text-primary/80"
+                            >
+                              前往智能代理创建项目
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {aiProjects.map((project) => (
                             <motion.div 
                               key={project.id}
                               initial={{ opacity: 0, y: 10 }}
@@ -836,7 +869,8 @@ export default function Profile() {
                             </motion.div>
                           ))}
                         </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </>
                 ) : (

@@ -549,6 +549,24 @@ export default function AIAgent() {
     }
   }, [searchParams, aiProjects, setSearchParams])
 
+  // Auto-select the most recently edited project on page load
+  useEffect(() => {
+    // Only auto-select if there's no active project and no URL parameter
+    const projectIdFromUrl = searchParams.get('projectId')
+    if (!activeProjectId && !pendingProjectId && !projectIdFromUrl && aiProjects.length > 0) {
+      // Find the most recently updated project
+      const sortedProjects = [...aiProjects].sort((a, b) => {
+        const dateA = a.updatedAt || a.createdAt
+        const dateB = b.updatedAt || b.createdAt
+        return new Date(dateB).getTime() - new Date(dateA).getTime()
+      })
+      const latestProject = sortedProjects[0]
+      if (latestProject) {
+        setActiveProjectId(latestProject.id)
+      }
+    }
+  }, [aiProjects, activeProjectId, pendingProjectId, searchParams])
+
   // Get current project from store (for sidebar selection)
   const currentProject = aiProjects.find(p => p.id === activeProjectId)
   
@@ -604,9 +622,10 @@ export default function AIAgent() {
     // New messages array with user message
     const newMessages = [...currentMessages, userMsg]
     
-    // Update project with new message
+    // Update project with new message and updatedAt
     updateAIProject(targetProjectId, {
-      messages: newMessages
+      messages: newMessages,
+      updatedAt: new Date().toISOString()
     })
     
     // If this is a new project (name is default), update name to first 5 chars
@@ -632,7 +651,8 @@ export default function AIAgent() {
       // Use the newMessages array we already have, plus the AI message
       updateAIProject(targetProjectId, {
         messages: [...newMessages, aiMsg],
-        canvasData
+        canvasData,
+        updatedAt: new Date().toISOString()
       })
       
       // If this was a pending project, now set it as active to show canvas
@@ -662,7 +682,7 @@ export default function AIAgent() {
   const handleProjectNameChange = (name: string) => {
     const targetProjectId = activeProjectId || pendingProjectId
     if (!targetProjectId) return
-    updateAIProject(targetProjectId, { name })
+    updateAIProject(targetProjectId, { name, updatedAt: new Date().toISOString() })
   }
 
   // Handle delete project
