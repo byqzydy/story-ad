@@ -45,13 +45,15 @@ export interface StoryTemplate {
   usageCount: number
 }
 
-// AI Project type
+// AI Project type - 广告项目
 export interface AIProject {
   id: string
   name: string
   createdAt: string
   updatedAt?: string  // 最近编辑时间
+  // 消息记录（AI对话）
   messages: { id: string; role: 'user' | 'ai'; content: string; timestamp: Date }[]
+  // Canvas数据
   canvasData?: {
     storyOutline?: string
     script?: string[]
@@ -60,9 +62,42 @@ export interface AIProject {
   // 上传的资源
   assets?: {
     productImages?: string[]  // 产品图
-    brandLogo?: string        // 品牌logo
+    productLogo?: string     // 产品logo
+    characterImages?: string[]  // 角色图
     scripts?: { name: string; url: string }[]  // 剧本文件
+    videos?: { name: string; url: string; thumbnail?: string }[]  // 生成的视频
   }
+  // 完整的创作配置（用于恢复项目状态）
+  storyConfig?: {
+    storyType: string
+    adType: string
+    audienceGender: string
+    audienceAge: string
+    duration: string
+    platforms: string[]
+    characterNames: string[]
+    characterDescriptions: string[]
+    characterImages: string[]
+    productName: string
+    productTone: string
+    productDescription: string
+    productLogo: string
+    productImages: string[]
+    fusionLevel: number
+    scene: string
+    customScene: string
+    visualStyle: string
+    voice: string
+    aspectRatio: string
+    storyPrompt: string
+    adCoreConcept: string
+    adEndingEmotion: string
+    generatedScript?: string  // 生成的剧本
+  }
+  // 项目封面
+  thumbnail?: string
+  // 当前步骤
+  currentStep?: number
 }
 
 // Store State
@@ -108,6 +143,9 @@ interface AppState {
     storyPrompt: string
     adCoreConcept: string  // 广告核心创作概念，不超过30字
     adEndingEmotion: string  // 广告结尾希望表达的情绪，不超过20字
+    referenceMovies: string  // 参考电影
+    hasVoiceover: boolean  // 是否有配音
+    productPlacementRatio: number  // 产品植入比例
   }
   setCurrentStep: (step: number) => void
   updateStoryConfig: (config: Partial<AppState['storyConfig']>) => void
@@ -116,6 +154,7 @@ interface AppState {
   // Projects
   projects: AdProject[]
   addProject: (project: AdProject) => void
+  deleteProject: (id: string) => void
   
   // Templates
   templates: StoryTemplate[]
@@ -135,6 +174,12 @@ interface AppState {
   addAIProject: (project: AIProject) => void
   updateAIProject: (id: string, updates: Partial<AIProject>) => void
   deleteAIProject: (id: string) => void
+
+  // Ad Projects (广告项目 - 从广告创作页保存)
+  adProjects: AIProject[]
+  addAdProject: (project: AIProject) => void
+  updateAdProject: (id: string, updates: Partial<AIProject>) => void
+  deleteAdProject: (id: string) => void
 }
 
 const defaultStoryConfig = {
@@ -169,6 +214,9 @@ const defaultStoryConfig = {
   storyPrompt: '',
   adCoreConcept: '',
   adEndingEmotion: '',
+  referenceMovies: '',  // 参考电影
+  hasVoiceover: false,  // 是否有配音
+  productPlacementRatio: 50,  // 产品植入比例
 }
 
 export const useStore = create<AppState>()(
@@ -327,6 +375,9 @@ export const useStore = create<AppState>()(
       addProject: (project) => set((state) => ({ 
         projects: [project, ...state.projects] 
       })),
+      deleteProject: (id) => set((state) => ({
+        projects: state.projects.filter(p => p.id !== id)
+      })),
       
       // Templates (mock data)
       templates: [
@@ -364,6 +415,20 @@ export const useStore = create<AppState>()(
       })),
       deleteAIProject: (id) => set((state) => ({
         aiProjects: state.aiProjects.filter(p => p.id !== id)
+      })),
+
+      // Ad Projects (广告项目 - 从广告创作页保存)
+      adProjects: [],
+      addAdProject: (project) => set((state) => ({ 
+        adProjects: [project, ...state.adProjects] 
+      })),
+      updateAdProject: (id, updates) => set((state) => ({
+        adProjects: state.adProjects.map(p => 
+          p.id === id ? { ...p, ...updates } : p
+        )
+      })),
+      deleteAdProject: (id) => set((state) => ({
+        adProjects: state.adProjects.filter(p => p.id !== id)
       })),
     }),
     {

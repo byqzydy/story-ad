@@ -1,14 +1,14 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ArrowLeft, ArrowRight, Upload, Image, Music, Mic, Sparkles, 
   Play, Pause, Check, ChevronRight, RotateCcw, Wand2,
   Clock, Zap, RefreshCw, Download, Share2, Heart, Star, Edit,
-  Monitor, Smartphone, User, Package, X
+  Monitor, Smartphone, User, Package, X, AlertTriangle
 } from 'lucide-react'
 import { useStore } from '../store'
-import { generateAdScript, type JiaobengInput } from '../skills/jiaobeng'
+import { generateAdScript, processFeedback, type JiaobengInput } from '../skills/jiaobeng'
 
 // Step Indicator
 function StepIndicator({ currentStep }: { currentStep: number }) {
@@ -264,7 +264,7 @@ function Step1StoryBasic({ onNext, onPrev, onSave, type = 'product' }: StepProps
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
       <div>
-        <h3 className="text-lg font-semibold text-white mb-4">选择故事类型</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">选择电影类型</h3>
         <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-6">
           {storyTypes.map(t => (
             <button key={t.id} onClick={() => updateStoryConfig({ storyType: t.id })} className={`card p-4 rounded-xl border-2 text-center transition-all hover:shadow-glow ${storyConfig.storyType === t.id ? 'border-ambient-blue bg-ambient-blue/10' : 'border-glass-border hover:border-ambient-blue/50'}`}>
@@ -273,6 +273,18 @@ function Step1StoryBasic({ onNext, onPrev, onSave, type = 'product' }: StepProps
             </button>
           ))}
         </div>
+      </div>
+
+      {/* 参考电影类别 */}
+      <div>
+        <h3 className="text-lg font-semibold text-white mb-4">参考电影类别</h3>
+        <input
+          type="text"
+          value={storyConfig.referenceMovies || ''}
+          onChange={(e) => updateStoryConfig({ referenceMovies: e.target.value })}
+          placeholder="输入参考电影名称，如：肖申克的救赎、阿凡达..."
+          className="w-full bg-luxury-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-luxury-600 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 transition-all"
+        />
       </div>
 
       {/* 角色设定 Section - Moved from Step 1 */}
@@ -324,58 +336,6 @@ function Step1StoryBasic({ onNext, onPrev, onSave, type = 'product' }: StepProps
                     className="w-full bg-luxury-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-luxury-600 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 transition-all resize-none h-20"
                     maxLength={100}
                   />
-                </div>
-                
-                {/* 角色图片上传 - 大图预览 */}
-                <div>
-                  <label className="text-xs font-medium text-luxury-400 uppercase tracking-wider mb-2 block">角色{index + 1}形象</label>
-                  <div className="relative aspect-square rounded-xl overflow-hidden bg-luxury-950/50 border-2 border-dashed border-white/10 group-hover:border-purple-400/50 focus-within:border-purple-400/50 transition-all">
-                    {storyConfig.characterImages && storyConfig.characterImages[index] && storyConfig.characterImages[index] !== '' ? (
-                      <>
-                        <img src={storyConfig.characterImages[index]} alt={`角色${index + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            const newImages = storyConfig.characterImages ? [...storyConfig.characterImages] : Array(3).fill('')
-                            newImages[index] = ''
-                            updateStoryConfig({ characterImages: newImages })
-                          }}
-                          className="absolute top-3 right-3 z-10 w-8 h-8 bg-red-500/90 hover:bg-red-500 rounded-full flex items-center justify-center opacity-100 transition-all transform hover:scale-110 shadow-lg"
-                        >
-                          <X className="w-4 h-4 text-white" />
-                        </button>
-                      </>
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-luxury-600">
-                        <div className="w-16 h-16 rounded-full bg-luxury-800/50 flex items-center justify-center mb-3">
-                          <User className="w-8 h-8" />
-                        </div>
-                        <span className="text-sm">上传角色图片</span>
-                      </div>
-                    )}
-                    <label className="absolute inset-0 cursor-pointer">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            const reader = new FileReader()
-                            reader.onload = () => {
-                              const newImages = [...(storyConfig.characterImages || Array(3).fill(''))]
-                              newImages[index] = reader.result as string
-                              updateStoryConfig({ characterImages: newImages })
-                            }
-                            reader.readAsDataURL(file)
-                          }
-                        }} 
-                      />
-                    </label>
-                  </div>
                 </div>
               </div>
             </div>
@@ -582,6 +542,8 @@ function Step3StoryContent({ onNext, onPrev, onSave }: StepProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isAICreating, setIsAICreating] = useState(false)
   const [generatedScripts, setGeneratedScripts] = useState<string[]>([])
+  const [showModifyDialog, setShowModifyDialog] = useState(false)
+  const [modifyFeedback, setModifyFeedback] = useState('')
 
   const handleGenerate = () => {
     setIsGenerating(true)
@@ -606,7 +568,12 @@ function Step3StoryContent({ onNext, onPrev, onSave }: StepProps) {
         visualStyle: storyConfig.visualStyle || '动画',
         duration: storyConfig.duration || '30s',
         audienceGender: storyConfig.audienceGender || '不限',
-        audienceAge: storyConfig.audienceAge || '不限'
+        audienceAge: storyConfig.audienceAge || '不限',
+        storyType: storyConfig.storyType || '不限',
+        referenceMovies: storyConfig.referenceMovies || '',
+        aspectRatio: storyConfig.aspectRatio || '9:16',
+        hasVoiceover: storyConfig.hasVoiceover || false,
+        productPlacementRatio: storyConfig.productPlacementRatio || 50
       }
       
       // 调用 Jiaobeng skill 生成剧本
@@ -710,15 +677,24 @@ function Step3StoryContent({ onNext, onPrev, onSave }: StepProps) {
             value={generatedScripts.length > 0 ? generatedScripts[0] : ''}
             onChange={(e) => handleEditScript(0, e.target.value)}
             placeholder="输入或编辑广告剧本..."
-            className="w-full bg-luxury-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-luxury-600 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 transition-all resize-none h-[500px] pr-24"
+            className="w-full bg-luxury-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-luxury-600 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 transition-all resize-none h-[500px] pr-36"
           />
-          <button 
-            onClick={handleAICreateStory} 
-            disabled={isAICreating} 
-            className="absolute bottom-4 right-4 btn-primary flex items-center gap-2 text-base px-6 py-2"
-          >
-            {isAICreating ? <><RefreshCw className="w-4 h-4 animate-spin" />生成中...</> : <><Sparkles className="w-4 h-4" />AI创作剧本</>}
-          </button>
+          <div className="absolute bottom-4 right-4 flex gap-2">
+            <button 
+              onClick={() => setShowModifyDialog(true)} 
+              disabled={!generatedScripts[0] || isAICreating}
+              className={`btn-secondary flex items-center gap-2 text-sm px-3 py-2 ${(!generatedScripts[0] || isAICreating) ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <Edit className="w-4 h-4" />修改剧本
+            </button>
+            <button 
+              onClick={handleAICreateStory} 
+              disabled={isAICreating} 
+              className="btn-primary flex items-center gap-2 text-base px-4 py-2"
+            >
+              {isAICreating ? <><RefreshCw className="w-4 h-4 animate-spin" />生成中...</> : <><Sparkles className="w-4 h-4" />AI创作剧本</>}
+            </button>
+          </div>
         </div>
         
         {/* 剧本列表 */}
@@ -760,6 +736,71 @@ function Step3StoryContent({ onNext, onPrev, onSave }: StepProps) {
           </button>
         </div>
       </div>
+
+      {/* 修改剧本反馈对话框 */}
+      <AnimatePresence>
+        {showModifyDialog && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-luxury-950/80 backdrop-blur-sm"
+            onClick={() => setShowModifyDialog(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-luxury-800 rounded-2xl border border-glass-border p-6 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold text-white mb-4">修改剧本</h3>
+              <p className="text-sm text-luxury-400 mb-4">请输入您的修改意见：</p>
+              <textarea
+                value={modifyFeedback}
+                onChange={(e) => setModifyFeedback(e.target.value)}
+                placeholder="输入您对剧本的修改意见..."
+                className="w-full bg-luxury-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-luxury-600 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 transition-all resize-none h-32 mb-6"
+              />
+              <div className="flex gap-3 justify-end">
+                <button 
+                  onClick={() => {
+                    setShowModifyDialog(false)
+                    setModifyFeedback('')
+                  }}
+                  className="px-4 py-2.5 bg-luxury-700 text-luxury-200 rounded-xl text-sm font-medium hover:bg-luxury-600 transition-colors"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={() => {
+                    if (modifyFeedback.trim() && generatedScripts[0]) {
+                      // 使用 processFeedback 处理用户反馈并生成新版本
+                      const currentScript = generatedScripts[0]
+                      const updatedScript = processFeedback(currentScript, {
+                        version: 'V1',
+                        globalOpinion: modifyFeedback.trim()
+                      })
+                      
+                      // 更新剧本内容
+                      setGeneratedScripts(prev => prev.map((script, i) => 
+                        i === 0 ? updatedScript : script
+                      ))
+                      
+                      console.log('剧本已根据反馈修改:', modifyFeedback)
+                    }
+                    setShowModifyDialog(false)
+                    setModifyFeedback('')
+                  }}
+                  className="px-4 py-2.5 bg-gradient-to-r from-ambient-blue to-ambient-purple text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                  确认
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
@@ -849,7 +890,29 @@ interface CreateProps {
 
 export default function Create({ type = 'product', title = '创作产品广告' }: CreateProps) {
   const navigate = useNavigate()
-  const { currentStep, setCurrentStep, storyConfig, addProject, user } = useStore()
+  const [searchParams] = useSearchParams()
+  const location = useLocation() as { state?: { returnPath?: string } }
+  const { currentStep, setCurrentStep, storyConfig, addProject, user, aiProjects, updateAIProject, updateStoryConfig, adProjects, addAdProject, updateAdProject } = useStore()
+
+  // 检查URL中是否有projectId参数，如果有则恢复项目状态
+  const projectId = searchParams.get('projectId')
+  
+  useEffect(() => {
+    if (projectId && adProjects.length > 0) {
+      const project = adProjects.find(p => p.id === projectId)
+      if (project) {
+        // 恢复项目配置
+        if (project.storyConfig) {
+          updateStoryConfig(project.storyConfig)
+        }
+        // 恢复步骤
+        if (project.currentStep) {
+          setCurrentStep(project.currentStep)
+        }
+        console.log('已恢复广告项目:', project.name)
+      }
+    }
+  }, [projectId, adProjects])
 
   // Get category based on type
   const getCategory = () => {
@@ -875,25 +938,207 @@ export default function Create({ type = 'product', title = '创作产品广告' 
   const handleNext = () => { if (currentStep < 5) setCurrentStep(currentStep + 1) }
   const handlePrev = () => { if (currentStep > 1) setCurrentStep(currentStep - 1) }
 
-  // Handle save project
-  const handleSaveProject = () => {
-    const newProject = {
-      id: Date.now().toString(),
-      title: storyConfig.productName || getDefaultTitle(),
-      thumbnail: storyConfig.productImages?.[0] || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=225&fit=crop',
-      author: user || { id: '1', name: '用户', avatar: 'https://i.pravatar.cc/100', level: 'bronze' as const, totalGenerations: 0, totalLikes: 0, totalViews: 0 },
-      views: 0,
-      likes: 0,
-      favorites: 0,
-      duration: storyConfig.duration || '30s',
-      category: getCategory(),
-      style: storyConfig.visualStyle || '默认',
-      createdAt: new Date().toISOString().split('T')[0],
-      status: 'draft' as const
+  // Track if user has actually made any edits (typed something, uploaded, etc.)
+  const [hasEdited, setHasEdited] = useState(false)
+  // Track if user has saved at least once
+  const [hasSavedOnce, setHasSavedOnce] = useState(false)
+  // Store original storyConfig when loading a saved project (for comparison)
+  // Using Record<string, unknown> to handle the difference between store type and saved project type
+  const [originalStoryConfig, setOriginalStoryConfig] = useState<Record<string, unknown> | null>(null)
+  // Store the return path (where to navigate back)
+  const [returnPath, setReturnPath] = useState<string | null>(null)
+
+  // Track if we're still initializing (to distinguish initial load from user edits)
+  const isInitializing = useRef(true)
+
+  // Initialize on mount: check if loading from project list or new project
+  useEffect(() => {
+    const projectId = searchParams.get('projectId')
+    
+    if (projectId && adProjects.length > 0) {
+      // Loading existing project - store original config for comparison
+      const project = adProjects.find(p => p.id === projectId)
+      if (project && project.storyConfig) {
+        setOriginalStoryConfig(project.storyConfig)
+        setHasSavedOnce(true) // Already saved, so consider as "saved" state
+      }
     }
-    addProject(newProject)
-    alert('项目已保存到个人中心')
-    navigate('/profile')
+    
+    // Set return path based on navigation state (from Profile) or default to create-guide
+    if (location.state?.returnPath) {
+      setReturnPath(location.state.returnPath)
+    } else {
+      setReturnPath('/create-guide')
+    }
+    
+    // Mark initialization complete after first render
+    setTimeout(() => {
+      isInitializing.current = false
+    }, 0)
+  }, [])
+
+  // Track if user has made actual edits (for new projects)
+  useEffect(() => {
+    // Skip during initialization and for saved projects
+    if (isInitializing.current || originalStoryConfig) return
+    
+    // For new projects: check if there's any meaningful content that user typed
+    const hasContent = storyConfig.productName || 
+      storyConfig.productDescription || 
+      (storyConfig.productImages && storyConfig.productImages.length > 0) ||
+      (storyConfig.characterNames && storyConfig.characterNames.some(n => n)) ||
+      storyConfig.storyPrompt ||
+      storyConfig.adCoreConcept
+    
+    if (hasContent) {
+      setHasEdited(true)
+    }
+  }, [storyConfig, originalStoryConfig])
+
+  // Handle beforeunload to warn about unsaved changes
+  useEffect(() => {
+    // Determine if there are unsaved changes
+    let hasUnsavedChanges = false
+    
+    if (originalStoryConfig) {
+      // For saved projects: compare with original
+      hasUnsavedChanges = JSON.stringify(storyConfig) !== JSON.stringify(originalStoryConfig)
+    } else {
+      // For new projects: check if user has edited
+      hasUnsavedChanges = hasEdited
+    }
+    
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [storyConfig, originalStoryConfig, hasEdited])
+
+  // Modal state for unsaved changes dialog
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  // Toast state for save notification
+  const [showSaveToast, setShowSaveToast] = useState(false)
+
+  // Handle go back with confirmation dialog
+  const handleGoBack = () => {
+    // For saved projects (originalStoryConfig exists), compare with original
+    if (originalStoryConfig) {
+      const hasChanges = JSON.stringify(storyConfig) !== JSON.stringify(originalStoryConfig)
+      if (hasChanges) {
+        setShowSaveDialog(true)
+        return
+      }
+    } else {
+      // For new projects, check if user has actually edited
+      if (hasEdited) {
+        setShowSaveDialog(true)
+        return
+      }
+    }
+    
+    // No changes - navigate to return path
+    if (returnPath) {
+      navigate(returnPath, { replace: true })
+    } else {
+      navigate(-1)
+    }
+  }
+
+  // Handle save and stay - save project and navigate to creation guide
+  const handleSaveAndStay = () => {
+    const projectId = searchParams.get('projectId')
+    const newProject = {
+      id: projectId || Date.now().toString(),
+      name: storyConfig.productName || getDefaultTitle(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messages: [],
+      storyConfig: { 
+        ...storyConfig,
+        productLogo: storyConfig.productLogo || '',
+        productImage: storyConfig.productImage || '',
+        characterImage: storyConfig.characterImage || '',
+        characterImage2: storyConfig.characterImage2 || ''
+      },
+      currentStep,
+      thumbnail: storyConfig.productImages?.[0] || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=225&fit=crop',
+      assets: {
+        productImages: storyConfig.productImages || [],
+        productLogo: storyConfig.productLogo || '',
+        characterImages: storyConfig.characterImages || [],
+        scripts: [],
+        videos: []
+      }
+    }
+    
+    if (projectId) {
+      updateAdProject(projectId, newProject)
+    } else {
+      addAdProject(newProject)
+    }
+    setShowSaveDialog(false)
+    // Mark that user has saved at least once
+    setHasSavedOnce(true)
+    // Update original config to current (so we don't show dialog for unchanged edits)
+    setOriginalStoryConfig({ ...storyConfig })
+    // Navigate to return path
+    navigate(returnPath || '/create-guide', { replace: true })
+  }
+
+  // Handle discard and go back
+  const handleDiscardAndGoBack = () => {
+    setShowSaveDialog(false)
+    if (returnPath) {
+      navigate(returnPath, { replace: true })
+    } else {
+      navigate(-1)
+    }
+  }
+
+  // Handle save project (original function for buttons)
+  const handleSaveProject = () => {
+    const projectId = searchParams.get('projectId')
+    const newProject = {
+      id: projectId || Date.now().toString(),
+      name: storyConfig.productName || getDefaultTitle(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messages: [],
+      storyConfig: { 
+        ...storyConfig,
+        productLogo: storyConfig.productLogo || '',
+        productImage: storyConfig.productImage || '',
+        characterImage: storyConfig.characterImage || '',
+        characterImage2: storyConfig.characterImage2 || ''
+      },
+      currentStep,
+      thumbnail: storyConfig.productImages?.[0] || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=225&fit=crop',
+      assets: {
+        productImages: storyConfig.productImages || [],
+        productLogo: storyConfig.productLogo || '',
+        characterImages: storyConfig.characterImages || [],
+        scripts: [],
+        videos: []
+      }
+    }
+    
+    if (projectId) {
+      updateAdProject(projectId, newProject)
+    } else {
+      addAdProject(newProject)
+    }
+    // Mark that user has saved at least once
+    setHasSavedOnce(true)
+    // Update original config to current (so we don't show dialog for unchanged edits)
+    setOriginalStoryConfig({ ...storyConfig })
+    // Show toast notification
+    setShowSaveToast(true)
+    // Auto-hide toast after 2 seconds
+    setTimeout(() => setShowSaveToast(false), 2000)
   }
 
   return (
@@ -907,7 +1152,7 @@ export default function Create({ type = 'product', title = '创作产品广告' 
       <header className="relative glass sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-glass-light rounded-xl transition-colors"><ArrowLeft className="w-5 h-5 text-luxury-300" /></button>
+            <button onClick={handleGoBack} className="p-2 hover:bg-glass-light rounded-xl transition-colors"><ArrowLeft className="w-5 h-5 text-luxury-300" /></button>
             <h1 className="text-xl font-semibold text-white">{title}</h1>
           </div>
         </div>
@@ -921,6 +1166,70 @@ export default function Create({ type = 'product', title = '创作产品广告' 
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Styled Save Confirmation Dialog */}
+      <AnimatePresence>
+        {showSaveDialog && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-luxury-950/80 backdrop-blur-sm"
+            onClick={() => setShowSaveDialog(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-luxury-800 rounded-2xl border border-glass-border p-6 max-w-sm w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="w-14 h-14 mx-auto mb-4 bg-ambient-purple/10 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-7 h-7 text-ambient-purple" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">是否保存项目？</h3>
+                <p className="text-sm text-luxury-400 mb-6">
+                  您有未保存的更改，选择保存将项目保存到个人中心。
+                </p>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={handleDiscardAndGoBack}
+                    className="flex-1 px-4 py-2.5 bg-luxury-700 text-luxury-200 rounded-xl text-sm font-medium hover:bg-luxury-600 transition-colors"
+                  >
+                    不保存
+                  </button>
+                  <button 
+                    onClick={handleSaveAndStay}
+                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-ambient-blue to-ambient-purple text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+                  >
+                    保存项目
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Save Success Toast Notification */}
+      <AnimatePresence>
+        {showSaveToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50"
+          >
+            <div className="bg-luxury-800 border border-glass-border rounded-xl px-6 py-4 flex items-center gap-3 shadow-lg">
+              <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                <Check className="w-5 h-5 text-green-400" />
+              </div>
+              <span className="text-white font-medium">项目已保存</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

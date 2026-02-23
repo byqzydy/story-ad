@@ -9,6 +9,7 @@ import Pricing from './pages/Pricing'
 import Profile from './pages/Profile'
 import CreationGuide from './pages/CreationGuide'
 import AIAgent from './pages/AIAgent'
+import ProjectDetail from './pages/ProjectDetail'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/create-guide" element={<CreationGuide />} />
         <Route path="/ai-agent" element={<AIAgent />} />
         <Route path="/detail/:id" element={<Detail />} />
+        <Route path="/project/:id" element={<ProjectDetail />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/profile" element={<Profile />} />
       </Routes>

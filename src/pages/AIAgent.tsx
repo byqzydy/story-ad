@@ -6,6 +6,7 @@ import {
   MessageSquare, User, Bot as BotIcon, Crown, LogOut, User as UserIcon, X, Trash2
 } from 'lucide-react'
 import { useStore, type AIProject } from '../store'
+import { generateAIResponse } from '../services/aiService'
 
 // Navbar for AI Agent Page (same style as CreationGuide, with 智能代理 selected)
 function Navbar() {
@@ -80,8 +81,8 @@ function Sidebar({ projects, activeProject, onSelectProject, onNewProject, onDel
   onDeleteProject: (id: string) => void
 }) {
   return (
-    <div className="w-40 bg-luxury-900 border-r border-glass-border flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-1">
+    <div className="w-40 bg-luxury-900 border-r border-glass-border flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
         <div className="text-[10px] text-luxury-500 px-1 py-1">项目</div>
         {projects.length === 0 ? (
           <div className="text-[10px] text-luxury-600 px-1 py-2">暂无项目</div>
@@ -116,17 +117,17 @@ function Sidebar({ projects, activeProject, onSelectProject, onNewProject, onDel
             </div>
           ))
         )}
-      </div>
-      
-      {/* New Project Button at bottom */}
-      <div className="p-2 border-t border-glass-border">
-        <button
-          onClick={onNewProject}
-          className="w-full flex items-center justify-center gap-1 px-2 py-2 bg-gradient-to-r from-ambient-blue to-ambient-purple text-white rounded-lg text-xs hover:opacity-90 transition-opacity"
-        >
-          <Plus className="w-3 h-3" />
-          新建项目
-        </button>
+        
+        {/* New Project Button - right after last project */}
+        <div className="px-1 py-2">
+          <button
+            onClick={onNewProject}
+            className="w-full flex items-center justify-center gap-1 px-2 py-2 bg-gradient-to-r from-ambient-blue to-ambient-purple text-white rounded-lg text-xs hover:opacity-90 transition-opacity"
+          >
+            <Plus className="w-3 h-3" />
+            新建项目
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -401,8 +402,7 @@ function Canvas({ zoom, setZoom, isEmpty, canvasData }: {
 
       {/* Canvas Content */}
       <div 
-        className="absolute inset-4 bg-luxury-900 rounded-2xl border border-glass-border shadow-soft overflow-hidden"
-        style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'center center' }}
+        className="absolute inset-4 bg-luxury-900 rounded-2xl border border-glass-border shadow-soft overflow-hidden flex flex-col"
       >
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-6">
@@ -413,16 +413,16 @@ function Canvas({ zoom, setZoom, isEmpty, canvasData }: {
         ) : canvasData?.storyOutline ? (
           <>
             {/* Stage Results Header */}
-            <div className="px-6 py-4 border-b border-glass-border bg-luxury-800/50">
+            <div className="px-6 py-4 border-b border-glass-border bg-luxury-800/50 shrink-0">
               <h3 className="text-lg font-semibold text-white">阶段性成果</h3>
               <p className="text-sm text-luxury-400">AI 正在生成您的广告内容</p>
             </div>
 
-            {/* Content Area */}
-            <div className="p-6 space-y-6">
+            {/* Content Area - scrollable */}
+            <div className="flex-1 overflow-y-auto">
               {/* Stage 1: Story Outline */}
               {canvasData.storyOutline && (
-                <div className="bg-luxury-800/50 rounded-xl p-4 border border-glass-border">
+                <div className="bg-luxury-800/50 p-4 border-b border-glass-border">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-6 h-6 rounded-full bg-ambient-blue flex items-center justify-center text-white text-xs">1</div>
                     <h4 className="text-white font-medium">故事大纲</h4>
@@ -434,7 +434,7 @@ function Canvas({ zoom, setZoom, isEmpty, canvasData }: {
 
               {/* Stage 2: Script */}
               {canvasData.script && canvasData.script.length > 0 && (
-                <div className="bg-luxury-800/50 rounded-xl p-4 border border-glass-border">
+                <div className="bg-luxury-800/50 p-4 border-b border-glass-border">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-6 h-6 rounded-full bg-ambient-purple flex items-center justify-center text-white text-xs">2</div>
                     <h4 className="text-white font-medium">分镜脚本</h4>
@@ -460,7 +460,7 @@ function Canvas({ zoom, setZoom, isEmpty, canvasData }: {
               )}
 
               {/* Stage 3: Visual */}
-              <div className={`bg-luxury-800/50 rounded-xl p-4 border border-glass-border ${canvasData.visualStatus !== 'completed' ? 'opacity-50' : ''}`}>
+              <div className={`bg-luxury-800/50 p-4 ${canvasData.visualStatus !== 'completed' ? 'opacity-50' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-6 rounded-full bg-luxury-600 flex items-center justify-center text-white text-xs">3</div>
                   <h4 className="text-white font-medium">视觉生成</h4>
@@ -513,15 +513,13 @@ function Canvas({ zoom, setZoom, isEmpty, canvasData }: {
   )
 }
 
-// Mock AI response function
-const generateAIResponse = (userMessage: string): string => {
-  const responses = [
-    "根据您的需求，我建议创建一个温馨感人的故事场景。主人公可以使用职场新人的角色，突出产品的实用性。",
-    "我理解您想要表达品牌理念。为您生成以下故事大纲：\n\n1. 开场：展示产品在日常生活中的使用场景\n2. 发展：主人公遇到困难，产品解决问题\n3. 高潮：情感升华，突出品牌价值\n4. 结尾：产品特写 + 品牌slogan",
-    "好的，我来帮您优化这个广告脚本。让我分析一下目标受众和产品特点...",
-    "根据您的反馈，我建议增加更多情感元素。以下是优化后的分镜脚本...",
-  ]
-  return responses[Math.floor(Math.random() * responses.length)]
+// Convert uploaded files to the format expected by AI service
+const convertUploadedFiles = (files: UploadedFile[]) => {
+  return files.map(f => ({
+    type: f.type as 'image' | 'document',
+    name: f.file.name,
+    preview: f.preview
+  }))
 }
 
 export default function AIAgent() {
@@ -582,12 +580,25 @@ export default function AIAgent() {
       messages: [{
         id: Date.now().toString(),
         role: 'ai',
-        content: '您好！我是虹忆坊智能广告助手。请描述您的广告需求，例如：产品特点、目标受众、想要的风格等，我会帮您生成专业的广告内容。',
+        content: `🎬 您好！我是虹忆坊智能广告代理
+
+作为电影叙事广告制作专家，我将帮助您创作具有电影质感的广告作品。
+
+**我可以为您做：**
+• 🎯 基于产品特点设计独特的科幻电影叙事
+• 🎬 生成专业分镜脚本和拍摄指令  
+• 🎨 提供视觉风格和色彩方案建议
+• 🎵 规划声音设计和配乐方向
+• 🚀 适配多种时长和平台版本
+
+**请告诉我您的需求：**
+您想为什么产品创作广告？产品的核心卖点是什么？您希望呈现什么样的风格和情绪？
+
+期待与您一起创作精彩的作品！`,
         timestamp: new Date()
       }],
       canvasData: {}
     }
-    
     // Add to store
     addAIProject(newProject)
     // Set as pending (shows in chat area but not in canvas)
@@ -602,67 +613,80 @@ export default function AIAgent() {
     setPendingProjectId(null)
   }
 
-  // Handle sending message
-  const handleSend = (content: string, files?: UploadedFile[]) => {
+  // Handle sending message - now async for AI service
+  const handleSend = async (content: string, files?: UploadedFile[]) => {
     const targetProjectId = activeProjectId || pendingProjectId
     if (!targetProjectId) return
-    
-    // Add user message
     const userMsg = {
       id: Date.now().toString(),
       role: 'user' as const,
       content,
       timestamp: new Date()
     }
-    
     // Get current messages
     const project = aiProjects.find(p => p.id === targetProjectId)
     const currentMessages = project?.messages || []
-    
-    // New messages array with user message
     const newMessages = [...currentMessages, userMsg]
-    
-    // Update project with new message and updatedAt
     updateAIProject(targetProjectId, {
       messages: newMessages,
       updatedAt: new Date().toISOString()
     })
-    
     // If this is a new project (name is default), update name to first 5 chars
     if (project?.name === '新项目' && content.length > 0) {
       const newName = content.slice(0, 5) + (content.length > 5 ? '...' : '')
       updateAIProject(targetProjectId, { name: newName })
     }
-    
     // Simulate AI typing
     setIsTyping(true)
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(content)
+    try {
+      // Call the AI service with conversation history
+      const historyForAI = currentMessages
+        .filter(m => m.role === 'user' || m.role === 'ai')
+        .map(m => ({ role: m.role, content: m.content }))
+      
+      const result = await generateAIResponse(content, historyForAI, files ? convertUploadedFiles(files) : undefined)
       const aiMsg = {
         id: (Date.now() + 1).toString(),
         role: 'ai' as const,
-        content: aiResponse,
+        content: result.response,
         timestamp: new Date()
       }
       
-      // Generate canvas data based on conversation
-      const canvasData = generateCanvasData(content, aiResponse)
-      
+      // Preserve existing canvas data if no new data returned
+      const existingProject = aiProjects.find(p => p.id === targetProjectId)
+      const existingCanvasData = existingProject?.canvasData
+      const canvasData = result.canvasData ? {
+        storyOutline: result.canvasData.storyOutline,
+        script: result.canvasData.script,
+        visualStatus: result.canvasData.visualStatus
+      } : (existingCanvasData || undefined)
       // Use the newMessages array we already have, plus the AI message
       updateAIProject(targetProjectId, {
         messages: [...newMessages, aiMsg],
         canvasData,
         updatedAt: new Date().toISOString()
       })
-      
       // If this was a pending project, now set it as active to show canvas
       if (pendingProjectId === targetProjectId) {
         setActiveProjectId(targetProjectId)
         setPendingProjectId(null)
       }
-      
+    } catch (error) {
+      console.error('AI response error:', error)
+      // Fallback error message
+      const errorMsg = {
+        id: (Date.now() + 1).toString(),
+        role: 'ai' as const,
+        content: '抱歉，我遇到了一些问题。请稍后再试，或者尝试重新描述您的需求。',
+        timestamp: new Date()
+      }
+      updateAIProject(targetProjectId, {
+        messages: [...newMessages, errorMsg],
+        updatedAt: new Date().toISOString()
+      })
+    } finally {
       setIsTyping(false)
-    }, 1500)
+    }
   }
 
   // Generate canvas data from conversation
@@ -725,11 +749,11 @@ export default function AIAgent() {
   const showEmptyCanvas = !currentProject || !currentProject.canvasData?.storyOutline
 
   return (
-    <div className="min-h-screen bg-luxury-950 flex flex-col">
+    <div className="h-screen bg-luxury-950 flex flex-col overflow-hidden">
       <Navbar />
       
       {/* Three Column Layout */}
-      <div className="flex flex-1 pt-20">
+      <div className="flex flex-1 pt-20 overflow-hidden">
         {/* Column 1: Sidebar (narrower) */}
         <Sidebar
           projects={sidebarProjects}

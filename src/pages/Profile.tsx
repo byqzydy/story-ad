@@ -10,7 +10,7 @@ import { useStore } from '../store'
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, logout, projects, updateUser, aiProjects, deleteAIProject, updateAIProject } = useStore()
+  const { user, logout, projects, updateUser, aiProjects, deleteAIProject, updateAIProject, deleteProject, adProjects, deleteAdProject } = useStore()
   const [activeMenu, setActiveMenu] = useState<'profile' | 'works' | 'projects' | 'favorites' | 'settings'>('works')
   const [activeTab, setActiveTab] = useState<'published' | 'drafts'>('published')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -225,13 +225,13 @@ export default function Profile() {
       updateAIProject(selectedProject.id, {
         assets: {
           ...currentAssets,
-          brandLogo: reader.result as string
+          productLogo: reader.result as string
         }
       })
       // 从 store 获取最新数据更新 selectedProject
       const updatedProject = aiProjects.find(p => p.id === selectedProject.id)
       if (updatedProject) {
-        setSelectedProject({ ...updatedProject, assets: { ...updatedProject.assets, brandLogo: reader.result as string } })
+        setSelectedProject({ ...updatedProject, assets: { ...updatedProject.assets, productLogo: reader.result as string } })
       }
     }
     reader.readAsDataURL(file)
@@ -302,7 +302,7 @@ export default function Profile() {
     updateAIProject(selectedProject.id, {
       assets: {
         ...currentAssets,
-        brandLogo: undefined
+        productLogo: undefined
       }
     })
     // 更新本地状态
@@ -310,7 +310,7 @@ export default function Profile() {
       ...selectedProject,
       assets: {
         ...currentAssets,
-        brandLogo: undefined
+        productLogo: undefined
       }
     })
   }
@@ -350,7 +350,7 @@ export default function Profile() {
       <header className="glass">
         <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/')} className="p-1.5 hover:bg-glass-light rounded-lg transition-colors">
+            <button onClick={() => navigate('/create-guide')} className="p-1.5 hover:bg-glass-light rounded-lg transition-colors">
               <ArrowLeft className="w-4 h-4 text-luxury-300" />
             </button>
             <h1 className="text-lg font-semibold text-white">个人中心</h1>
@@ -450,7 +450,7 @@ export default function Profile() {
                 {viewMode === 'grid' ? (
                   <div className="grid sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {filteredProjects.map((project, idx) => (
-                      <motion.div key={project.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }} className="card group cursor-pointer overflow-hidden">
+                      <motion.div key={project.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }} className="card group cursor-pointer overflow-hidden scale-75 origin-top">
                         <Link to={`/detail/${project.id}`}>
                           <div className="relative aspect-[9/16] border-b border-glass-border">
                             <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -525,7 +525,7 @@ export default function Profile() {
                 </div>
                 <div className="grid sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {filteredProjects.map((project, idx) => (
-                    <motion.div key={project.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }} className="card group cursor-pointer overflow-hidden">
+                    <motion.div key={project.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }} className="card group cursor-pointer overflow-hidden scale-75 origin-top">
                       <Link to={`/detail/${project.id}`}>
                         <div className="relative aspect-[9/16] border-b border-glass-border">
                           <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -789,28 +789,40 @@ export default function Profile() {
                   <>
                     <div className="card p-4">
                       <h3 className="text-base font-medium text-white mb-4">项目管理</h3>
-                      {/* 显示已保存的广告项目 */}
-                      {projects.length > 0 && (
+                      
+                      {/* 广告项目列表 - 使用 adProjects */}
+                      {adProjects.length > 0 && (
                         <div className="mb-6">
                           <h4 className="text-sm text-luxury-400 mb-3">已保存的广告项目</h4>
                           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {projects.map((project) => (
+                            {adProjects.map((project) => (
                               <motion.div 
                                 key={project.id}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className="card group cursor-pointer overflow-hidden border-2 border-transparent hover:border-primary transition-all relative"
-                                onClick={() => navigate(`/detail/${project.id}`)}
+                                onClick={() => navigate(`/create-product?projectId=${project.id}`, { state: { returnPath: '/profile' } })}
                               >
+                                {/* Delete button */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    deleteAdProject(project.id)
+                                  }}
+                                  className="absolute top-2 left-2 z-10 p-1.5 bg-red-500/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                                  title="删除项目"
+                                >
+                                  <Trash2 className="w-4 h-4 text-white" />
+                                </button>
                                 <div className="relative aspect-video bg-luxury-800">
-                                  <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover" />
+                                  <img src={project.thumbnail || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400'} alt={project.name} className="w-full h-full object-cover" />
                                   <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs">查看详情</span>
+                                    <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs">继续编辑</span>
                                   </div>
-                                  <div className="absolute top-2 right-2 px-2 py-0.5 bg-luxury-950/60 backdrop-blur-sm rounded text-white text-xs">{project.duration}</div>
+                                  <div className="absolute top-2 right-2 px-2 py-0.5 bg-luxury-950/60 backdrop-blur-sm rounded text-white text-xs">{project.storyConfig?.duration || '未知时长'}</div>
                                 </div>
                                 <div className="p-3">
-                                  <h4 className="font-medium text-luxury-100 text-sm truncate">{project.title}</h4>
+                                  <h4 className="font-medium text-luxury-100 text-sm truncate">{project.name}</h4>
                                   <p className="text-xs text-luxury-500 mt-1">{project.createdAt}</p>
                                 </div>
                               </motion.div>
@@ -819,58 +831,69 @@ export default function Profile() {
                         </div>
                       )}
                       
-                      {/* 显示智能代理项目 */}
-                      <div>
-                        <h4 className="text-sm text-luxury-400 mb-3">智能代理项目</h4>
-                        {aiProjects.length === 0 ? (
-                          <div className="text-center py-8">
-                            <FolderOpen className="w-12 h-12 mx-auto text-luxury-600 mb-3" />
-                            <p className="text-sm text-luxury-500">暂无智能代理项目</p>
-                            <button 
-                              onClick={() => navigate('/ai-agent')}
-                              className="mt-4 text-sm text-primary hover:text-primary/80"
-                            >
-                              前往智能代理创建项目
-                            </button>
-                          </div>
-                        ) : (
+                      {/* 智能代理项目列表 - 使用 aiProjects */}
+                      {aiProjects.length > 0 && (
+                        <div className="mb-6">
+                          <h4 className="text-sm text-luxury-400 mb-3">智能代理项目</h4>
                           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {aiProjects.map((project) => (
-                            <motion.div 
-                              key={project.id}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="card group cursor-pointer overflow-hidden border-2 border-transparent hover:border-primary transition-all relative"
-                              onClick={() => setSelectedProject(project)}
-                            >
-                              {/* Delete button - appears on hover at top-left */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  deleteAIProject(project.id)
-                                }}
-                                className="absolute top-2 left-2 z-10 p-1.5 bg-red-500/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
-                                title="删除项目"
+                              <motion.div 
+                                key={project.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="card group cursor-pointer overflow-hidden border-2 border-transparent hover:border-primary transition-all relative"
+                                onClick={() => navigate(`/ai-agent?projectId=${project.id}`)}
                               >
-                                <Trash2 className="w-4 h-4 text-white" />
-                              </button>
-                              <div className="relative aspect-video bg-luxury-800">
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <Bot className="w-12 h-12 text-luxury-600" />
+                                {/* Delete button */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    deleteAIProject(project.id)
+                                  }}
+                                  className="absolute top-2 left-2 z-10 p-1.5 bg-red-500/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                                  title="删除项目"
+                                >
+                                  <Trash2 className="w-4 h-4 text-white" />
+                                </button>
+                                <div className="relative aspect-video bg-luxury-800">
+                                  <img src={project.thumbnail || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400'} alt={project.name} className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs">查看详情</span>
+                                  </div>
+                                  <div className="absolute top-2 right-2 px-2 py-0.5 bg-luxury-950/60 backdrop-blur-sm rounded text-white text-xs">{project.storyConfig?.duration || '未知时长'}</div>
                                 </div>
-                                <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs">查看详情</span>
+                                <div className="p-3">
+                                  <h4 className="font-medium text-luxury-100 text-sm truncate">{project.name}</h4>
+                                  <p className="text-xs text-luxury-500 mt-1">{project.createdAt}</p>
                                 </div>
-                              </div>
-                              <div className="p-3">
-                                <h4 className="font-medium text-luxury-100 text-sm truncate">{project.name}</h4>
-                                <p className="text-xs text-luxury-500 mt-1">{new Date(project.createdAt).toLocaleDateString('zh-CN')}</p>
-                              </div>
-                            </motion.div>
-                          ))}
+                              </motion.div>
+                            ))}
+                          </div>
                         </div>
-                        )}
-                      </div>
+                      )}
+                      
+                      {/* 空状态提示 */}
+                      {adProjects.length === 0 && aiProjects.length === 0 && (
+                        <div className="text-center py-8">
+                          <FolderOpen className="w-12 h-12 mx-auto text-luxury-600 mb-3" />
+                          <p className="text-sm text-luxury-500 mb-4">暂无项目</p>
+                          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                            <button 
+                              onClick={() => navigate('/create-product')}
+                              className="text-sm text-primary hover:text-primary/80"
+                            >
+                              前往广告创作
+                            </button>
+                            <span className="text-luxury-600">|</span>
+                            <button 
+                              onClick={() => navigate('/ai-agent')}
+                              className="text-sm text-primary hover:text-primary/80"
+                            >
+                              前往智能代理
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -892,9 +915,9 @@ export default function Profile() {
                             <Image className="w-4 h-4" /> 品牌Logo
                           </h4>
                           <div className="flex flex-wrap gap-3">
-                            {selectedProject.assets?.brandLogo ? (
+                            {selectedProject.assets?.productLogo ? (
                               <div className="relative group w-20 h-20">
-                                <img src={selectedProject.assets.brandLogo} alt="Logo" className="w-full h-full object-cover rounded-lg border border-luxury-600" />
+                                <img src={selectedProject.assets.productLogo} alt="Logo" className="w-full h-full object-cover rounded-lg border border-luxury-600" />
                                 <button
                                   onClick={() => handleDeleteLogo()}
                                   className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
