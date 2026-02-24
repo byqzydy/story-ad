@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { AIAgentType } from '../services/aiService'
 
 // Types
 export interface User {
@@ -52,7 +53,7 @@ export interface AIProject {
   createdAt: string
   updatedAt?: string  // 最近编辑时间
   // 消息记录（AI对话）
-  messages: { id: string; role: 'user' | 'ai'; content: string; timestamp: Date }[]
+  messages: { id: string; role: 'user' | 'ai'; content: string; timestamp: Date; agent?: AIAgentType }[]
   // Canvas数据
   canvasData?: {
     storyOutline?: string

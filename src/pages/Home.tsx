@@ -27,6 +27,20 @@ function Navbar() {
   )
 }
 
+// Default sample projects when no real projects exist
+const SAMPLE_PROJECTS = [
+  { id: 's1', title: '未来科技感广告', thumbnail: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=711&fit=crop', views: 12500, likes: 3200, duration: '30s' },
+  { id: 's2', title: '温暖治愈系', thumbnail: 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=711&fit=crop', views: 8900, likes: 2100, duration: '60s' },
+  { id: 's3', title: '炫酷运动风', thumbnail: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&h=711&fit=crop', views: 15600, likes: 4500, duration: '15s' },
+  { id: 's4', title: '唯美爱情故事', thumbnail: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=711&fit=crop', views: 22300, likes: 6700, duration: '60s' },
+  { id: 's5', title: '科幻大片质感', thumbnail: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=400&h=711&fit=crop', views: 31200, likes: 8900, duration: '90s' },
+  { id: 's6', title: '简约生活方式', thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=711&fit=crop', views: 7800, likes: 1800, duration: '30s' },
+  { id: 's7', title: '复古情怀', thumbnail: 'https://images.unsplash.com/photo-1533158326339-7f3cf2404354?w=400&h=711&fit=crop', views: 11200, likes: 2900, duration: '45s' },
+  { id: 's8', title: '自然风光', thumbnail: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=711&fit=crop', views: 19800, likes: 5200, duration: '30s' },
+  { id: 's9', title: '都市快节奏', thumbnail: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&h=711&fit=crop', views: 14500, likes: 3800, duration: '15s' },
+  { id: 's10', title: '梦幻童话', thumbnail: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&h=711&fit=crop', views: 26700, likes: 7200, duration: '60s' },
+]
+
 // Hero Section
 function Hero() {
   const navigate = useNavigate()
@@ -34,12 +48,13 @@ function Hero() {
   const { isLoggedIn, setShowLoginModal, setShowWelcomeGiftAfterLogin } = useStore()
   const [topProjects, setTopProjects] = useState<typeof projects>([])
 
-  // Get top 10 most liked published projects, update every 2 hours
+  // Get top 10 most liked published projects, or use samples if none exist
   useEffect(() => {
     const updateTopProjects = () => {
       const publishedProjects = projects.filter(p => p.status === 'published')
       const sorted = [...publishedProjects].sort((a, b) => b.likes - a.likes).slice(0, 10)
-      setTopProjects(sorted)
+      // Use sample projects if no real projects
+      setTopProjects(sorted.length > 0 ? sorted : SAMPLE_PROJECTS as any)
     }
 
     updateTopProjects()
@@ -96,10 +111,11 @@ function Hero() {
             <div 
               className="flex gap-4 px-8"
               style={{
-                animation: 'scroll-left 60s linear infinite',
+                animation: 'scroll-right-to-left 60s linear infinite',
                 width: 'max-content'
               }}
             >
+              {/* Triple the projects for seamless loop */}
               {[...topProjects, ...topProjects, ...topProjects].map((project, idx) => (
                 <Link key={`${project.id}-${idx}`} to={`/detail/${project.id}`} className="flex-shrink-0 w-40 md:w-48 group cursor-pointer">
                   <div className="relative rounded-xl overflow-hidden aspect-[9/16] mb-3 border border-glass-border">
@@ -120,9 +136,9 @@ function Hero() {
             </div>
           </div>
           <style>{`
-            @keyframes scroll-left {
-              0% { transform: translateX(0); }
-              100% { transform: translateX(-33.33%); }
+            @keyframes scroll-right-to-left {
+              0% { transform: translateX(-50%); }
+              100% { transform: translateX(0); }
             }
           `}</style>
         </motion.div>

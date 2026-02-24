@@ -6,7 +6,7 @@ import {
   MessageSquare, User, Bot as BotIcon, Crown, LogOut, User as UserIcon, X, Trash2
 } from 'lucide-react'
 import { useStore, type AIProject } from '../store'
-import { generateAIResponse } from '../services/aiService'
+import { generateAIResponse, INITIAL_GREETING, getProgress } from '../services/aiService'
 
 // Navbar for AI Agent Page (same style as CreationGuide, with 智能代理 selected)
 function Navbar() {
@@ -580,21 +580,7 @@ export default function AIAgent() {
       messages: [{
         id: Date.now().toString(),
         role: 'ai',
-        content: `🎬 您好！我是虹忆坊智能广告代理
-
-作为电影叙事广告制作专家，我将帮助您创作具有电影质感的广告作品。
-
-**我可以为您做：**
-• 🎯 基于产品特点设计独特的科幻电影叙事
-• 🎬 生成专业分镜脚本和拍摄指令  
-• 🎨 提供视觉风格和色彩方案建议
-• 🎵 规划声音设计和配乐方向
-• 🚀 适配多种时长和平台版本
-
-**请告诉我您的需求：**
-您想为什么产品创作广告？产品的核心卖点是什么？您希望呈现什么样的风格和情绪？
-
-期待与您一起创作精彩的作品！`,
+        content: INITIAL_GREETING + getProgress({}),
         timestamp: new Date()
       }],
       canvasData: {}
