@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Sparkles, Package, Megaphone, Tag, Crown, User, LogOut, Layers, Bot } from 'lucide-react'
+import { ArrowLeft, Sparkles, Package, Megaphone, Tag, Crown, User, LogOut, Layers, Bot, Clapperboard } from 'lucide-react'
 import { useStore } from '../store'
 import { useState } from 'react'
 import LoginModal from '../components/LoginModal'
@@ -44,6 +44,17 @@ function Navbar({ creationMode, onModeChange }: { creationMode: string; onModeCh
           >
             <Bot className="w-4 h-4" />
             智能代理
+          </button>
+          <button
+            onClick={() => onModeChange('movie')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              creationMode === 'movie'
+                ? 'bg-gradient-to-r from-ambient-blue to-ambient-purple text-white shadow-soft'
+                : 'text-luxury-400 hover:text-white hover:bg-luxury-700'
+            }`}
+          >
+            <Clapperboard className="w-4 h-4" />
+            趣味玩法
           </button>
         </div>
 
@@ -117,6 +128,13 @@ export default function CreationGuide() {
         return
       }
       navigate('/ai-agent')
+    } else if (mode === 'movie') {
+      if (!isLoggedIn) {
+        setShowWelcomeGiftAfterLogin(true)
+        setShowLoginModal(true)
+        return
+      }
+      navigate('/movie-placement')
     }
   }
 

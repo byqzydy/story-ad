@@ -9,6 +9,7 @@ import Pricing from './pages/Pricing'
 import Profile from './pages/Profile'
 import CreationGuide from './pages/CreationGuide'
 import AIAgent from './pages/AIAgent'
+import MoviePlacement from './pages/MoviePlacement'
 import ProjectDetail from './pages/ProjectDetail'
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
         <Route path="/create-promotion" element={<CreatePromotion />} />
         <Route path="/create-guide" element={<CreationGuide />} />
         <Route path="/ai-agent" element={<AIAgent />} />
+        <Route path="/movie-placement" element={<MoviePlacement />} />
         <Route path="/detail/:id" element={<Detail />} />
         <Route path="/project/:id" element={<ProjectDetail />} />
         <Route path="/pricing" element={<Pricing />} />
