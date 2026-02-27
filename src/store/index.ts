@@ -277,7 +277,7 @@ export const useStore = create<AppState>()(
         {
           id: '2',
           title: '创业路上的坚持',
-          thumbnail: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=225&fit=crop',
+          thumbnail: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=400&h=225&fit=crop',
           author: { id: '2', name: '阿杰', avatar: 'https://i.pravatar.cc/100?img=2', level: 'platinum', totalGenerations: 256, totalLikes: 8900, totalViews: 256000 },
           views: 25600,
           likes: 5670,
@@ -291,7 +291,7 @@ export const useStore = create<AppState>()(
         {
           id: '3',
           title: '春节团圆饭',
-          thumbnail: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=225&fit=crop',
+          thumbnail: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=400&h=225&fit=crop',
           author: { id: '3', name: '李老板', avatar: 'https://i.pravatar.cc/100?img=3', level: 'silver', totalGenerations: 45, totalLikes: 1200, totalViews: 35000 },
           views: 8900,
           likes: 1200,
@@ -305,7 +305,7 @@ export const useStore = create<AppState>()(
         {
           id: '4',
           title: '夏日清爽护肤指南',
-          thumbnail: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&h=225&fit=crop',
+          thumbnail: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=225&fit=crop',
           author: { id: '4', name: '美妆达人', avatar: 'https://i.pravatar.cc/100?img=4', level: 'diamond', totalGenerations: 512, totalLikes: 25000, totalViews: 520000 },
           views: 52000,
           likes: 12500,
@@ -319,7 +319,7 @@ export const useStore = create<AppState>()(
         {
           id: '5',
           title: '科技改变生活',
-          thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=225&fit=crop',
+          thumbnail: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=225&fit=crop',
           author: { id: '5', name: '科技控', avatar: 'https://i.pravatar.cc/100?img=5', level: 'gold', totalGenerations: 180, totalLikes: 7800, totalViews: 180000 },
           views: 18000,
           likes: 4560,
@@ -333,7 +333,7 @@ export const useStore = create<AppState>()(
         {
           id: '6',
           title: '妈妈的爱',
-          thumbnail: 'https://images.unsplash.com/photo-1544776193-352d25ca82cd?w=400&h=225&fit=crop',
+          thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&h=225&fit=crop',
           author: { id: '6', name: '温暖心', avatar: 'https://i.pravatar.cc/100?img=6', level: 'silver', totalGenerations: 67, totalLikes: 3200, totalViews: 78000 },
           views: 7800,
           likes: 2340,
@@ -347,7 +347,7 @@ export const useStore = create<AppState>()(
         {
           id: '7',
           title: '双十一狂欢',
-          thumbnail: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400&h=225&fit=crop',
+          thumbnail: 'https://images.unsplash.com/photo-1607082350899-7e105aa886ae?w=400&h=225&fit=crop',
           author: { id: '7', name: '购物狂', avatar: 'https://i.pravatar.cc/100?img=7', level: 'platinum', totalGenerations: 320, totalLikes: 15000, totalViews: 380000 },
           views: 38000,
           likes: 8900,
@@ -361,7 +361,7 @@ export const useStore = create<AppState>()(
         {
           id: '8',
           title: '宠物情缘',
-          thumbnail: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=225&fit=crop',
+          thumbnail: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=225&fit=crop',
           author: { id: '8', name: '铲屎官', avatar: 'https://i.pravatar.cc/100?img=8', level: 'gold', totalGenerations: 156, totalLikes: 9800, totalViews: 220000 },
           views: 22000,
           likes: 6780,
