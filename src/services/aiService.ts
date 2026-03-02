@@ -334,6 +334,43 @@ function extractCollectedInfo(conversationHistory: Array<{ role: 'user' | 'ai'; 
 
 // ============== Main Generation Function ==============
 
+// Check if user is confirming to start creation
+function extractLastCompleteInfo(conversationHistory: Array<{ role: 'user' | 'ai'; content: string }>): CollectedInfo | undefined {
+  // Look for the last AI message that contains the summary (stage complete)
+  for (let i = conversationHistory.length - 1; i >= 0; i--) {
+    const msg = conversationHistory[i]
+    if (msg.role === 'ai' && msg.content.includes('需求确认清单')) {
+      const collected: CollectedInfo = {}
+      // Extract from summary
+      const adTypeMatch = msg.content.match(/广告类型[：:]([^\n]+)/)
+      if (adTypeMatch) collected.adType = adTypeMatch[1].trim()
+      const storyTypeMatch = msg.content.match(/故事类型[：:]([^\n]+)/)
+      if (storyTypeMatch) collected.storyType = storyTypeMatch[1].trim()
+      const durationMatch = msg.content.match(/时长[：:]([^\n]+)/)
+      if (durationMatch) collected.duration = durationMatch[1].trim()
+      const ratioMatch = msg.content.match(/植入比例[：:]([^\n]+)/)
+      if (ratioMatch) collected['植入比例'] = ratioMatch[1].trim()
+      const genderMatch = msg.content.match(/目标受众[：:]([^\n，,]+)/)
+      if (genderMatch) collected.targetGender = genderMatch[1].trim()
+      // Try to get product description from earlier user messages
+      for (let j = conversationHistory.length - 1; j >= 0; j--) {
+        if (conversationHistory[j].role === 'user' && conversationHistory[j].content.length > 20) {
+          collected.productDescription = conversationHistory[j].content
+          break
+        }
+      }
+      return collected
+    }
+  }
+  return undefined
+}
+
+// Check if user is confirming to start creation
+function isUserConfirmingCreation(userMessage: string): boolean {
+  const confirmPhrases = ['确认', '确认并开始创作', '开始创作', '确认需求', '好的', '确定', '开始']
+  return confirmPhrases.some(phrase => userMessage.includes(phrase))
+}
+
 export async function generateAIResponse(
   userMessage: string,
   conversationHistory: Array<{ role: 'user' | 'ai'; content: string; agent?: AIAgentType }>,
@@ -341,11 +378,36 @@ export async function generateAIResponse(
 ): Promise<{
   response: string
   canvasData?: GeneratedContent
-  stage: 'collecting' | 'ready_to_create' | 'story' | 'script' | 'complete'
+  stage: 'collecting' | 'ready_to_create' | 'story' | 'script' | 'complete' | 'creating'
   collectedInfo?: CollectedInfo
   agent?: AIAgentType
 }> {
   // First message - show welcome and first question
+  if (conversationHistory.length === 0) {
+    return {
+      response: INITIAL_GREETING + '\n\n' + getProgress({}),
+      stage: 'collecting',
+      agent: 'requirements_collector'
+    }
+  }
+
+  // Check if user is confirming to start creation
+  if (isUserConfirmingCreation(userMessage)) {
+    const collectedInfo = extractLastCompleteInfo(conversationHistory)
+    if (collectedInfo && isSciFiStory(collectedInfo.storyType)) {
+      // Call creative director with sci-fi skill
+      return await generateCreativeDirectorResponse(collectedInfo, userMessage)
+    }
+    // For non-sci-fi, just acknowledge and proceed
+    return {
+      response: '好的，已收到您的确认！现在开始为您生成广告创意方案。\n\n请稍候...',
+      stage: 'ready_to_create',
+      collectedInfo,
+      agent: 'creative_director'
+    }
+  }
+
+  // Build messages for MiniMax API
   if (conversationHistory.length === 0) {
     return {
       response: INITIAL_GREETING + '\n\n' + getProgress({}),
@@ -513,10 +575,57 @@ export async function generateAIResponse(
   }
 }
 
-export function formatResponseForDisplay(response: string): string {
-  return response
-    .replace(/## /g, '\n🎬 ')
-    .replace(/### /g, '\n✨ ')
-    .replace(/\*\*/g, '')
-    .replace(/\n\n/g, '\n')
+
+// ============== Creative Director Agent ==============
+
+const SCI_FI_MATCHING_PROMPT = `你是虹忆坊创意总监，专精科幻广告创意。当用户需求中的广告故事类型为"科幻"时，调用科幻匹配技能。
+
+## 工作流程
+1. 接收需求信息
+2. 概念提取与分析
+3. 科幻子类型匹配（赛博朋克/硬科幻/太空史诗/复古未来/心理惊悚）
+4. 输出完整创意方案
+
+## 输出格式
+用中文输出，结构清晰。`
+
+export function isSciFiStory(storyType?: string): boolean {
+  if (!storyType) return false
+  return storyType.includes('科幻')
+}
+
+export async function generateCreativeDirectorResponse(
+  collectedInfo: CollectedInfo,
+  userMessage: string
+): Promise<{
+  response: string
+  stage: 'creating' | 'complete'
+  collectedInfo: CollectedInfo
+  agent: 'creative_director'
+  skill?: string
+}> {
+  const isSciFi = isSciFiStory(collectedInfo.storyType)
+  const messages: MiniMaxMessage[] = [
+    { role: 'system', content: SCI_FI_MATCHING_PROMPT }
+  ]
+  const requirementsSummary = `产品描述：${collectedInfo.productDescription || '未提供'}，故事类型：${collectedInfo.storyType || '未选择'}，时长：${collectedInfo.duration || '默认30s'}，植入比例：${collectedInfo['植入比例'] || '默认25%'}`
+  const skillPrompt = isSciFi ? '\n\n激活科幻匹配技能进行创意创作。' : '\n\n请生成广告创意方案。'
+  messages.push({ role: 'user', content: requirementsSummary + skillPrompt })
+  try {
+    const aiResponse = await callMiniMaxAPI(messages)
+    return {
+      response: aiResponse,
+      stage: 'complete' as const,
+      collectedInfo,
+      agent: 'creative_director' as const,
+      skill: isSciFi ? 'sci-fi-matching' : undefined
+    }
+  } catch {
+    return {
+      response: '抱歉，创意生成过程中遇到了一些问题。',
+      stage: 'creating' as const,
+      collectedInfo,
+      agent: 'creative_director' as const
+    }
+  }
 }

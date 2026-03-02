@@ -4,18 +4,105 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ArrowLeft, User, Settings, LogOut, Play, Heart, Star, Eye,
   Grid, List, Download, Trash2, MoreHorizontal, Video, FolderOpen, ChevronRight, AlertTriangle, X, Camera, Check,
-  Image, FileText, Plus, Bot
+  Image, FileText, Plus, Bot, Clapperboard, Loader2
 } from 'lucide-react'
 import { useStore } from '../store'
+import { getVideoTasks, deleteVideoTask, type VideoTask } from '../services/videoTaskService'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, logout, projects, updateUser, aiProjects, deleteAIProject, updateAIProject, deleteProject, adProjects, deleteAdProject } = useStore()
+  const { user, logout, projects, updateUser, aiProjects, deleteAIProject, updateAIProject, deleteProject, adProjects, deleteAdProject, movieProjects, deleteMovieProject } = useStore()
   const [activeMenu, setActiveMenu] = useState<'profile' | 'works' | 'projects' | 'favorites' | 'settings'>('works')
-  const [activeTab, setActiveTab] = useState<'published' | 'drafts'>('published')
+  const [activeTab, setActiveTab] = useState<'published' | 'drafts' | 'movie' | 'fun'>('published')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [selectedProject, setSelectedProject] = useState<typeof aiProjects[0] | null>(null)
+  
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean
+    type: 'videoTask' | 'adProject' | 'aiProject' | 'movieProject' | null
+    id: string | null
+    name: string
+  }>({ isOpen: false, type: null, id: null, name: '' })
+  
+  // Video tasks state
+  const [videoTasks, setVideoTasks] = useState<VideoTask[]>([])
+  const [isLoadingVideoTasks, setIsLoadingVideoTasks] = useState(false)
+  const [selectedVideoTask, setSelectedVideoTask] = useState<VideoTask | null>(null)
+  
+  // Fetch video tasks when switching to movie tab
+  useEffect(() => {
+    if (activeTab === 'movie') {
+      loadVideoTasks()
+    }
+  }, [activeTab])
+  
+  const loadVideoTasks = async () => {
+    setIsLoadingVideoTasks(true)
+    try {
+      const tasks = await getVideoTasks()
+      setVideoTasks(tasks)
+    } catch (error) {
+      console.error('Failed to load video tasks:', error)
+    } finally {
+      setIsLoadingVideoTasks(false)
+    }
+  }
+  
+  const handleDeleteVideoTask = async (taskId: string) => {
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'videoTask',
+      id: taskId,
+      name: '视频任务'
+    })
+  }
+  
+  const handleConfirmDelete = async () => {
+    const { type, id } = deleteConfirm
+    if (!id) return
+    
+    try {
+      if (type === 'videoTask') {
+        await deleteVideoTask(id)
+        setVideoTasks(tasks => tasks.filter(t => t.id !== id))
+        if (selectedVideoTask?.id === id) {
+          setSelectedVideoTask(null)
+        }
+      } else if (type === 'adProject') {
+        deleteAdProject(id)
+      } else if (type === 'aiProject') {
+        deleteAIProject(id)
+      } else if (type === 'movieProject') {
+        deleteMovieProject(id)
+      }
+    } catch (error) {
+      console.error('Failed to delete:', error)
+    }
+    setDeleteConfirm({ isOpen: false, type: null, id: null, name: '' })
+  }
+  
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-600'
+      case 'processing': return 'bg-blue-600'
+      case 'pending': return 'bg-yellow-600'
+      case 'failed': return 'bg-red-600'
+      default: return 'bg-gray-600'
+    }
+  }
+  
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'completed': return '已完成'
+      case 'processing': return '生成中'
+      case 'pending': return '等待中'
+      case 'failed': return '失败'
+      default: return status
+    }
+  }
   
   // 从 localStorage 恢复状态
   useEffect(() => {
@@ -429,6 +516,7 @@ export default function Profile() {
                     {[
                       { id: 'published', label: '已发布', icon: Play },
                       { id: 'drafts', label: '草稿箱', icon: Video },
+                      { id: 'movie', label: '趣味玩法', icon: Clapperboard },
                     ].map(tab => (
                       <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all ${activeTab === tab.id ? 'bg-primary text-white' : 'text-luxury-400 hover:text-white hover:bg-glass-light'}`}>
@@ -500,7 +588,7 @@ export default function Profile() {
                 )}
 
                 {/* Empty State */}
-                {filteredProjects.length === 0 && (
+                {filteredProjects.length === 0 && activeTab !== 'movie' && (
                   <div className="card p-12 text-center">
                     <div className="w-14 h-14 mx-auto mb-3 bg-luxury-800 rounded-xl flex items-center justify-center">
                       <Video className="w-6 h-6 text-luxury-500" />
@@ -513,6 +601,111 @@ export default function Profile() {
                     </p>
                     <button onClick={() => navigate('/create')} className="btn-primary text-sm py-2">立即创作</button>
                   </div>
+                )}
+                
+                {/* 趣味玩法视频任务列表 */}
+                {activeTab === 'movie' && (
+                  <>
+                    {isLoadingVideoTasks ? (
+                      <div className="card p-12 text-center">
+                        <Loader2 className="w-8 h-8 text-ambient-purple mx-auto animate-spin mb-4" />
+                        <p className="text-luxury-400">加载中...</p>
+                      </div>
+                    ) : videoTasks.length === 0 ? (
+                      <div className="card p-12 text-center">
+                        <div className="w-14 h-14 mx-auto mb-3 bg-luxury-800 rounded-xl flex items-center justify-center">
+                          <Clapperboard className="w-6 h-6 text-luxury-500" />
+                        </div>
+                        <h3 className="text-base font-medium text-white mb-1">
+                          暂无视频任务
+                        </h3>
+                        <p className="text-xs text-luxury-500 mb-4">
+                          在趣味玩法模式中生成的视频将显示在这里
+                        </p>
+                        <button onClick={() => navigate('/movie-placement-home')} className="btn-primary text-sm py-2">前往创作</button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* 视频任务列表 */}
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {videoTasks.map((task, idx) => (
+                            <motion.div 
+                              key={task.id} 
+                              initial={{ opacity: 0, y: 10 }} 
+                              animate={{ opacity: 1, y: 0 }} 
+                              transition={{ delay: idx * 0.03 }}
+                              className="card group cursor-pointer overflow-hidden"
+                              onClick={() => navigate(`/video-detail/${task.id}`)}
+                            >
+                              {/* 视频封面/状态 */}
+                              <div className="relative aspect-video bg-luxury-800">
+                                {task.clips.some(c => c.status === 'completed' && c.videoUrl) ? (
+                                  <video 
+                                    src={task.clips.find(c => c.status === 'completed')?.videoUrl} 
+                                    className="w-full h-full object-cover"
+                                    muted
+                                    onMouseEnter={(e) => e.currentTarget.play()}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.pause()
+                                      e.currentTarget.currentTime = 0
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    {task.status === 'processing' ? (
+                                      <Loader2 className="w-8 h-8 text-luxury-600 animate-spin" />
+                                    ) : (
+                                      <Clapperboard className="w-8 h-8 text-luxury-600" />
+                                    )}
+                                  </div>
+                                )}
+                                {/* 状态标签 */}
+                                <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs text-white ${getStatusColor(task.status)}`}>
+                                  {getStatusText(task.status)}
+                                </div>
+                                {/* 视频数量 */}
+                                <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 rounded text-xs text-white">
+                                  {task.clips.filter(c => c.status === 'completed').length}/{task.clips.length} 片段
+                                </div>
+                                {/* 悬停播放按钮 */}
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                                    <Play className="w-6 h-6 text-white ml-1" />
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* 任务信息 */}
+                              <div className="p-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-medium text-luxury-100 text-sm truncate">
+                                      {task.name}
+                                    </h3>
+                                    <p className="text-xs text-luxury-500 mt-1 truncate">
+                                      {task.movieName} · {task.duration}秒
+                                    </p>
+                                  </div>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleDeleteVideoTask(task.id)
+                                    }}
+                                    className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-luxury-500 hover:text-red-400" />
+                                  </button>
+                                </div>
+                                <p className="text-xs text-luxury-500 mt-2">
+                                  {new Date(task.createdAt).toLocaleString('zh-CN')}
+                                </p>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
@@ -872,8 +1065,56 @@ export default function Profile() {
                         </div>
                       )}
                       
+                      {/* 趣味玩法项目列表 - 使用 movieProjects */}
+                      {movieProjects.length > 0 && (
+                        <div className="mb-6">
+                          <h4 className="text-sm text-luxury-400 mb-3">趣味玩法项目</h4>
+                          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {movieProjects.map((project) => (
+                              <motion.div 
+                                key={project.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="card group cursor-pointer overflow-hidden border-2 border-transparent hover:border-primary transition-all relative"
+                                onClick={() => navigate(`/movie-placement?projectId=${project.id}`)}
+                              >
+                                {/* Delete button */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    deleteMovieProject(project.id)
+                                  }}
+                                  className="absolute top-2 left-2 z-10 p-1.5 bg-red-500/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                                  title="删除项目"
+                                >
+                                  <Trash2 className="w-4 h-4 text-white" />
+                                </button>
+                                <div className="relative aspect-video bg-luxury-800">
+                                  {project.productInfo.images && project.productInfo.images[0] ? (
+                                    <img src={project.productInfo.images[0]} alt={project.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <Clapperboard className="w-8 h-8 text-luxury-600" />
+                                    </div>
+                                  )}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs">继续编辑</span>
+                                  </div>
+                                  <div className="absolute top-2 right-2 px-2 py-0.5 bg-luxury-950/60 backdrop-blur-sm rounded text-white text-xs">{project.duration}秒</div>
+                                </div>
+                                <div className="p-3">
+                                  <h4 className="font-medium text-luxury-100 text-sm truncate">{project.name}</h4>
+                                  <p className="text-xs text-luxury-500 mt-1 truncate">{project.movieName || project.customMovie || '未选择电影'}</p>
+                                  <p className="text-xs text-luxury-500 mt-1">{project.createdAt}</p>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       {/* 空状态提示 */}
-                      {adProjects.length === 0 && aiProjects.length === 0 && (
+                      {adProjects.length === 0 && aiProjects.length === 0 && movieProjects.length === 0 && (
                         <div className="text-center py-8">
                           <FolderOpen className="w-12 h-12 mx-auto text-luxury-600 mb-3" />
                           <p className="text-sm text-luxury-500 mb-4">暂无项目</p>
@@ -890,6 +1131,13 @@ export default function Profile() {
                               className="text-sm text-primary hover:text-primary/80"
                             >
                               前往智能代理
+                            </button>
+                            <span className="text-luxury-600">|</span>
+                            <button 
+                              onClick={() => navigate('/movie-placement-home')}
+                              className="text-sm text-primary hover:text-primary/80"
+                            >
+                              前往趣味玩法
                             </button>
                           </div>
                         </div>
@@ -1085,6 +1333,18 @@ export default function Profile() {
           </div>
         </div>
       </main>
+      
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title="确认删除"
+        message={`确定要删除"${deleteConfirm.name}"吗？此操作不可恢复。`}
+        confirmText="删除"
+        cancelText="取消"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteConfirm({ isOpen: false, type: null, id: null, name: '' })}
+      />
     </div>
   )
 }

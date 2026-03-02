@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, MessageCircle, Phone, Video, Zap, Gift, ArrowRight, Check, Sparkles } from 'lucide-react'
 import { useStore } from '../store'
+import Logo from '../components/Logo'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -30,12 +31,7 @@ export default function Login() {
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center mb-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-r from-ambient-blue via-ambient-purple to-ambient-cyan">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-          </div>
-          <h1 className="text-2xl font-semibold gradient-text">虹忆坊</h1>
+          <Logo size="lg" />
           <p className="text-luxury-400 text-sm mt-1">最会讲故事的广告AGENT</p>
         </div>
 
@@ -120,7 +116,7 @@ export default function Login() {
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-ambient-purple to-ambient-pink rounded-xl mb-3">
                   <Gift className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-lg font-semibold text-white">欢迎来到虹忆坊！</h2>
+                <h2 className="text-lg font-semibold text-white">欢迎来到 WASAI！</h2>
                 <p className="text-luxury-400 text-sm mt-0.5">新用户专享见面礼</p>
               </div>
 

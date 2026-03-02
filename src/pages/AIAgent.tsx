@@ -3,10 +3,12 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { 
   ArrowLeft, Sparkles, Plus, Layers, Bot,
   Send, Image, FileText, Share2, ZoomIn, ZoomOut,
-  MessageSquare, User, Bot as BotIcon, Crown, LogOut, User as UserIcon, X, Trash2
+  MessageSquare, User, Bot as BotIcon, Crown, LogOut, User as UserIcon, X, Trash2,
+  Clapperboard
 } from 'lucide-react'
 import { useStore, type AIProject } from '../store'
 import { generateAIResponse, INITIAL_GREETING, getProgress } from '../services/aiService'
+import Logo from '../components/Logo'
 
 // Navbar for AI Agent Page (same style as CreationGuide, with 智能代理 selected)
 function Navbar() {
@@ -17,13 +19,8 @@ function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="w-full px-8 py-4 flex items-center justify-between">
-        {/* Left: Logo and Name - gray by default, theme color on hover */}
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-luxury-700 group-hover:bg-gradient-to-r group-hover:from-ambient-blue group-hover:to-ambient-purple transition-all">
-            <Sparkles className="w-5 h-5 text-luxury-400 group-hover:text-white transition-colors" />
-          </div>
-          <span className="text-xl font-semibold text-luxury-400 group-hover:bg-gradient-to-r group-hover:from-ambient-blue group-hover:to-ambient-purple group-hover:bg-clip-text group-hover:text-transparent tracking-tight transition-all">虹忆坊</span>
-        </Link>
+        {/* Left: Logo */}
+        <Logo size="md" />
 
         {/* Center: Creation Mode Tabs */}
         <div className="flex items-center gap-1 p-1 bg-luxury-800/50 rounded-xl border border-glass-border">
@@ -40,12 +37,19 @@ function Navbar() {
             <Bot className="w-4 h-4" />
             智能代理
           </button>
+          <button
+            onClick={() => navigate('/movie-placement-home')}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all text-luxury-400 hover:text-white hover:bg-luxury-700"
+          >
+            <Clapperboard className="w-4 h-4" />
+            趣味玩法
+          </button>
         </div>
 
         {/* Right: User actions */}
         <div className="flex items-center gap-3">
-          <Link to="/pricing" className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-ambient-purple to-ambient-pink text-white text-sm rounded-lg hover:opacity-90 transition-opacity">
-            <Crown className="w-4 h-4" />购买会员
+<Link to="/pricing" className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-ambient-purple to-ambient-pink text-white text-sm rounded-lg opacity-70 hover:opacity-100 transition-opacity">
+            <Crown className="w-4 h-4" />订阅会员
           </Link>
           {isLoggedIn ? (
             <div className="relative">
@@ -259,11 +263,11 @@ function ChatArea({ messages, projectName, onProjectNameChange, onSend, isEmpty,
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input - fixed at bottom with highlight border, increased height by 1.5x */}
+      {/* Input - fixed at bottom with highlight border */}
       <div className="p-3 border-t border-glass-border shrink-0">
         <div className={`bg-luxury-800 rounded-xl border-2 border-ambient-blue/50 focus-within:border-ambient-blue transition-colors p-3`}>
           
-          {/* Uploaded Files Preview - thumbnails reduced by 1/3 */}
+          {/* Uploaded Files Preview */}
           {hasFiles && (
             <div className="flex flex-wrap gap-2 mb-2">
               {uploadedFiles.map((file) => (
@@ -290,10 +294,41 @@ function ChatArea({ messages, projectName, onProjectNameChange, onSend, isEmpty,
             </div>
           )}
           
-          {/* Input row with textarea - text area close to border */}
-          <div className="flex items-end gap-2">
-            {/* Upload buttons at bottom-left */}
-            <div className="flex gap-1 pb-0.5">
+          {/* Text Input Area - Full Width */}
+          <textarea
+            value={input}
+            onChange={(e) => {
+              if (!hasProject) {
+                alert('新建项目后才可以开始创作')
+                return
+              }
+              setInput(e.target.value)
+            }}
+            onClick={() => {
+              if (!hasProject) {
+                alert('新建项目后才可以开始创作')
+              }
+            }}
+            onKeyDown={(e) => {
+              if (!hasProject) {
+                e.preventDefault()
+                alert('新建项目后才可以开始创作')
+                return
+              }
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleSend()
+              }
+            }}
+            placeholder={hasProject ? "尝试描述您的产品特点、目标受众和期望的广告风格，例如：'为年轻人设计一款运动耳机的促销广告，突出时尚感和性价比'" : "新建项目后才可以开始创作"}
+            rows={6}
+            disabled={!hasProject}
+            className={`w-full bg-transparent text-sm placeholder-luxury-500 focus:outline-none resize-none leading-relaxed text-white ${!hasProject ? 'cursor-not-allowed' : ''}`}
+          />
+          
+          {/* Bottom Row: Upload Buttons and Send Button */}
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex gap-2">
               <input
                 ref={imageInputRef}
                 type="file"
@@ -310,10 +345,11 @@ function ChatArea({ messages, projectName, onProjectNameChange, onSend, isEmpty,
                   }
                   imageInputRef.current?.click()
                 }}
-                className={`p-1.5 rounded-lg transition-colors ${hasProject ? 'text-luxury-400 hover:text-white hover:bg-luxury-700' : 'text-luxury-600 cursor-not-allowed'}`}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors text-xs ${hasProject ? 'text-luxury-400 hover:text-white hover:bg-luxury-700' : 'text-luxury-600 cursor-not-allowed'}`}
                 title="上传图片"
               >
                 <Image className="w-4 h-4" />
+                <span>图片</span>
               </button>
               <input
                 ref={docInputRef}
@@ -331,50 +367,19 @@ function ChatArea({ messages, projectName, onProjectNameChange, onSend, isEmpty,
                   }
                   docInputRef.current?.click()
                 }}
-                className={`p-1.5 rounded-lg transition-colors ${hasProject ? 'text-luxury-400 hover:text-white hover:bg-luxury-700' : 'text-luxury-600 cursor-not-allowed'}`}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors text-xs ${hasProject ? 'text-luxury-400 hover:text-white hover:bg-luxury-700' : 'text-luxury-600 cursor-not-allowed'}`}
                 title="上传剧本"
               >
                 <FileText className="w-4 h-4" />
+                <span>文件</span>
               </button>
             </div>
-            
-            {/* Text input - textarea close to border */}
-            <textarea
-              value={input}
-              onChange={(e) => {
-                if (!hasProject) {
-                  alert('新建项目后才可以开始创作')
-                  return
-                }
-                setInput(e.target.value)
-              }}
-              onClick={() => {
-                if (!hasProject) {
-                  alert('新建项目后才可以开始创作')
-                }
-              }}
-              onKeyDown={(e) => {
-                if (!hasProject) {
-                  e.preventDefault()
-                  alert('新建项目后才可以开始创作')
-                  return
-                }
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSend()
-                }
-              }}
-              placeholder={hasProject ? "描述您的广告需求..." : "新建项目后才可以开始创作"}
-              rows={3}
-              disabled={!hasProject}
-              className={`flex-1 bg-transparent text-sm placeholder-luxury-500 focus:outline-none resize-none leading-relaxed py-0 ${!hasProject ? 'cursor-not-allowed' : ''}`}
-            />
             
             {/* Send button */}
             <button
               onClick={handleSend}
               disabled={(!input.trim() && uploadedFiles.length === 0) || !hasProject}
-              className="p-1.5 bg-gradient-to-r from-ambient-blue to-ambient-purple text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="p-2 bg-gradient-to-r from-ambient-blue to-ambient-purple text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
               <Send className="w-4 h-4" />
             </button>

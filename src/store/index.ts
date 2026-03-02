@@ -46,7 +46,66 @@ export interface StoryTemplate {
   usageCount: number
 }
 
-// AI Project type - 广告项目
+// Video Task type - 趣味玩法视频任务
+export interface VideoTask {
+  id: string
+  name: string
+  productName: string
+  productDescription: string
+  productImages: string[]
+  productLogo: string
+  movieName: string
+  movieType: string
+  duration: string
+  aspectRatio: string
+  script: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  createdAt: string
+  updatedAt: string
+  // 视频片段
+  clips: VideoClip[]
+}
+
+export interface VideoClip {
+  id: string
+  index: number
+  prompt: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  taskId?: string  // 即梦API返回的任务ID
+  videoUrl?: string  // 生成的视频URL
+  localPath?: string  // 本地存储路径
+  thumbnailUrl?: string
+  startTime: number
+  endTime: number
+  error?: string
+}
+
+// Movie Project type - 趣味玩法项目
+export interface MovieProject {
+  id: string
+  name: string
+  createdAt: string
+  updatedAt: string
+  // 产品信息
+  productInfo: {
+    name: string
+    description: string
+    images: string[]
+    logo: string
+  }
+  // 电影设定
+  movieType: string
+  movieName: string
+  customMovie: string
+  duration: string
+  aspectRatio: string
+  // 剧本
+  script: string
+  // 当前步骤
+  currentStep: number
+  // 视频任务ID（如果有）
+  videoTaskId?: string
+}
 export interface AIProject {
   id: string
   name: string
@@ -181,6 +240,18 @@ interface AppState {
   addAdProject: (project: AIProject) => void
   updateAdProject: (id: string, updates: Partial<AIProject>) => void
   deleteAdProject: (id: string) => void
+
+  // Video Tasks (趣味玩法视频任务)
+  videoTasks: VideoTask[]
+  addVideoTask: (task: VideoTask) => void
+  updateVideoTask: (id: string, updates: Partial<VideoTask>) => void
+  deleteVideoTask: (id: string) => void
+
+  // Movie Projects (趣味玩法项目)
+  movieProjects: MovieProject[]
+  addMovieProject: (project: MovieProject) => void
+  updateMovieProject: (id: string, updates: Partial<MovieProject>) => void
+  deleteMovieProject: (id: string) => void
 }
 
 const defaultStoryConfig = {
@@ -430,6 +501,34 @@ export const useStore = create<AppState>()(
       })),
       deleteAdProject: (id) => set((state) => ({
         adProjects: state.adProjects.filter(p => p.id !== id)
+      })),
+
+      // Video Tasks
+      videoTasks: [],
+      addVideoTask: (task) => set((state) => ({ 
+        videoTasks: [task, ...state.videoTasks] 
+      })),
+      updateVideoTask: (id, updates) => set((state) => ({
+        videoTasks: state.videoTasks.map(t => 
+          t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t
+        )
+      })),
+      deleteVideoTask: (id) => set((state) => ({
+        videoTasks: state.videoTasks.filter(t => t.id !== id)
+      })),
+
+      // Movie Projects
+      movieProjects: [],
+      addMovieProject: (project) => set((state) => ({ 
+        movieProjects: [project, ...state.movieProjects] 
+      })),
+      updateMovieProject: (id, updates) => set((state) => ({
+        movieProjects: state.movieProjects.map(p => 
+          p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
+        )
+      })),
+      deleteMovieProject: (id) => set((state) => ({
+        movieProjects: state.movieProjects.filter(p => p.id !== id)
       })),
     }),
     {

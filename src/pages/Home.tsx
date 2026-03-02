@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Play, Heart, Eye, Star, Zap, Shield, Sparkles, ChevronDown, Filter, User, LogOut } from 'lucide-react'
 import { useStore } from '../store'
 import LoginModal from '../components/LoginModal'
+import Logo from '../components/Logo'
 
 // Navbar - Minimal Glassmorphism
 function Navbar() {
@@ -12,12 +13,7 @@ function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-r from-ambient-blue via-ambient-purple to-ambient-cyan">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-semibold gradient-text tracking-tight">虹忆坊</span>
-        </Link>
+        <Logo size="md" />
 
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/create-guide')} className="btn-primary text-sm">开始创作</button>
@@ -334,13 +330,8 @@ function Footer() {
       <div className="max-w-6xl mx-auto px-8">
         <div className="grid grid-cols-5 gap-6 mb-8">
           <div className="col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gradient-to-r from-ambient-blue via-ambient-purple to-ambient-cyan">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-lg font-semibold gradient-text">虹忆坊</span>
-            </Link>
-            <p className="text-xs text-luxury-500">AI驱动的故事化广告生成平台</p>
+            <Logo size="lg" />
+            <p className="text-xs text-luxury-500 mt-2">AI驱动的故事化广告生成平台</p>
           </div>
           {Object.entries(links).map(([title, items]) => (
             <div key={title}>
@@ -352,7 +343,7 @@ function Footer() {
           ))}
         </div>
         <div className="pt-6 border-t border-glass-border/30 flex flex-col md:flex-row justify-between items-center gap-3">
-          <p className="text-xs text-luxury-500">© 2026 虹忆坊科技 All rights reserved.</p>
+          <p className="text-xs text-luxury-500">© 2026 WASAI All rights reserved.</p>
           <div className="flex gap-4">
             <a href="#" className="text-luxury-500 hover:text-ambient-blue transition-colors"><Shield className="w-4 h-4" /></a>
             <a href="#" className="text-luxury-500 hover:text-ambient-purple transition-colors"><Sparkles className="w-4 h-4" /></a>
