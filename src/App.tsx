@@ -14,6 +14,7 @@ import MoviePlacement from './pages/MoviePlacement'
 import MoviePlacementHome from './pages/MoviePlacementHome'
 import ProjectDetail from './pages/ProjectDetail'
 import VideoDetail from './pages/VideoDetail'
+import FinalWork from './pages/FinalWork'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
         <Route path="/detail/:id" element={<Detail />} />
         <Route path="/project/:id" element={<ProjectDetail />} />
         <Route path="/video-detail/:taskId" element={<VideoDetail />} />
+        <Route path="/final-work/:taskId" element={<FinalWork />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/profile" element={<Profile />} />
       </Routes>

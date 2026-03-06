@@ -1,9 +1,9 @@
 /**
  * AI Service for 虹忆坊智能代理
- * 需求收集师 - 通过结构化对话收集用户需求
+ * 使用 MiniMax API
  */
 
-const MINIMAX_API_KEY = 'sk-cp-Hdpam27OvKPbjs7qUEB93_-mFSXB-ygC6wBcGuKJVCyD0AUSgzAYDt7t218wGW-1MkFLYXpDzvkIYpTv98kYbAefcp16tigaD78zubr8GkpaP5LgeZGZrl8'
+const MINIMAX_API_KEY = 'sk-api-k-kavCfbWIFsXjqRBhQFTkh747i0xERi4S-EJGmVf4UEWAgAraxsHFDVdhcw8Toat2S9SRnh1DKnGtXsxKM1s5xy0ftE6BtaieEsr9WK-1nSzlG8qKQ-pVU'
 const MINIMAX_MODEL = 'MiniMax-M2.5'
 const MINIMAX_API_URL = 'https://api.minimax.chat/v1/text/chatcompletion_v2'
 
@@ -207,33 +207,56 @@ export { INITIAL_GREETING }
 
 // ============== MiniMax API Call ==============
 
-async function callMiniMaxAPI(messages: MiniMaxMessage[]): Promise<string> {
-  const response = await fetch(MINIMAX_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + MINIMAX_API_KEY
-    },
-    body: JSON.stringify({
-      model: MINIMAX_MODEL,
-      messages,
-      temperature: 0.7,
-      max_tokens: 4096
-    })
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error('MiniMax API error: ' + response.status + ' - ' + errorText)
-  }
-
-  const data: MiniMaxResponse = await response.json()
+async function callMiniMaxAPI(messages: MiniMaxMessage[], timeoutMs: number = 60000): Promise<string> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
   
-  if (!data.choices || data.choices.length === 0) {
-    throw new Error('No response from MiniMax API')
-  }
+  console.log('[MiniMax API] Sending request with', messages.length, 'messages')
+  console.log('[MiniMax API] Model:', MINIMAX_MODEL)
+  
+  try {
+    const response = await fetch(MINIMAX_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + MINIMAX_API_KEY
+      },
+      body: JSON.stringify({
+        model: MINIMAX_MODEL,
+        messages,
+        temperature: 0.7,
+        max_tokens: 4096
+      }),
+      signal: controller.signal
+    })
 
-  return data.choices[0].message.content
+    clearTimeout(timeoutId)
+
+    console.log('[MiniMax API] Response status:', response.status)
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[MiniMax API] Error response:', errorText)
+      throw new Error('MiniMax API error: ' + response.status + ' - ' + errorText)
+    }
+
+    const data: MiniMaxResponse = await response.json()
+    console.log('[MiniMax API] Full response:', JSON.stringify(data, null, 2))
+    console.log('[MiniMax API] Response received, choices:', data.choices?.length)
+    
+    if (!data.choices || data.choices.length === 0) {
+      throw new Error('No response from MiniMax API')
+    }
+
+    return data.choices[0].message.content
+  } catch (error) {
+    clearTimeout(timeoutId)
+    console.error('[MiniMax API] Caught error:', error)
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('API request timeout - please try again')
+    }
+    throw error
+  }
 }
 
 // ============== Helper Functions ==============
@@ -348,7 +371,7 @@ function extractLastCompleteInfo(conversationHistory: Array<{ role: 'user' | 'ai
       if (storyTypeMatch) collected.storyType = storyTypeMatch[1].trim()
       const durationMatch = msg.content.match(/时长[：:]([^\n]+)/)
       if (durationMatch) collected.duration = durationMatch[1].trim()
-      const ratioMatch = msg.content.match(/植入比例[：:]([^\n]+)/)
+      const ratioMatch = msg.content.match(/植入比例[：:]([^\n，,]+)/)
       if (ratioMatch) collected['植入比例'] = ratioMatch[1].trim()
       const genderMatch = msg.content.match(/目标受众[：:]([^\n，,]+)/)
       if (genderMatch) collected.targetGender = genderMatch[1].trim()
@@ -408,15 +431,6 @@ export async function generateAIResponse(
   }
 
   // Build messages for MiniMax API
-  if (conversationHistory.length === 0) {
-    return {
-      response: INITIAL_GREETING + '\n\n' + getProgress({}),
-      stage: 'collecting',
-      agent: 'requirements_collector'
-    }
-  }
-
-  // Build messages for MiniMax API
   const messages: MiniMaxMessage[] = [
     { role: 'system', content: AI_PROMPT }
   ]
@@ -448,8 +462,12 @@ export async function generateAIResponse(
     content: userMessage
   })
 
+  console.log('[generateAIResponse] Calling MiniMax API with', messages.length, 'messages')
+  console.log('[generateAIResponse] User message:', userMessage.slice(0, 50))
+  
   try {
     const aiResponse = await callMiniMaxAPI(messages)
+    console.log('[generateAIResponse] Received response, length:', aiResponse.length)
 
     // Parse collected info from conversation
     const collected = extractCollectedInfo(
@@ -549,7 +567,7 @@ export async function generateAIResponse(
     }
 
   } catch (error) {
-    console.error('MiniMax API error:', error)
+    console.error('[generateAIResponse] Caught error:', error)
     
     const errorMessage = error instanceof Error ? error.message : String(error)
     

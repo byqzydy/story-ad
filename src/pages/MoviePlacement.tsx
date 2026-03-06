@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
   Sparkles, Upload, Package, X, ArrowLeft, 
   Clock, Monitor, Smartphone, Wand2, Crown, User, LogOut,
-  Clapperboard, Film, Video, Loader2, Bot, Pencil, Play, Layers, Download, Check, Save
+  Clapperboard, Film, Video, Loader2, Bot, Pencil, Play, Layers, Download, Check, Save,
+  ChevronLeft, ChevronRight, FileText, RefreshCw
 } from 'lucide-react'
 import { useStore } from '../store'
 import { generateScript } from '../services/scriptGenerator'
 import type { MovieInfo } from '../services/movieService'
 import { parseScript, extractCharacterDescriptions, type VideoClip } from '../services/sceneSegmentation'
-import { createVideoTask, getVideoTask, type VideoTask } from '../services/videoTaskService'
+import { createVideoTask, getVideoTask, mergeVideoClips, getMergedVideoInfo, type VideoTask } from '../services/videoTaskService'
 import Logo from '../components/Logo'
 
 const movieTypes = [
@@ -57,17 +58,27 @@ interface ProductInfo {
   logo: string
 }
 
-const stepLabels = ['产品信息', '电影设定', '剧本确认', '视频预览']
+const stepLabels = ['产品信息', '电影设定', '剧本确认', '视频预览', '最终作品']
 
 export default function MoviePlacement() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const { user, isLoggedIn, logout, setShowLoginModal, movieProjects, addMovieProject, updateMovieProject } = useStore()
   const [showUserMenu, setShowUserMenu] = useState(false)
   
+  // Get return path from location state, default to profile
+  const returnPath = (location.state as { returnPath?: string })?.returnPath || '/profile'
+  
+  // Get ad type from URL for displaying the correct title
+  const adType = searchParams.get('type')
+  const pageTitle = adType === 'product' ? '创作产品植入广告' : adType === 'brand' ? '创作品牌植入广告' : adType === 'promotion' ? '创作促销植入广告' : ''
+  
   // Current project ID (for editing existing project)
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [videoModalOpen, setVideoModalOpen] = useState(false)
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null)
   
   // Load existing project if projectId is in URL
   useEffect(() => {
@@ -103,7 +114,10 @@ export default function MoviePlacement() {
   const [customMovie, setCustomMovie] = useState('')
   const [duration, setDuration] = useState('30')
   const [aspectRatio, setAspectRatio] = useState('16:9')
-  const [step, setStep] = useState(1)
+  // Get step from URL params, default to 1
+  const stepParam = searchParams.get('step')
+  const initialStep = stepParam ? parseInt(stepParam) : 1
+  const [step, setStep] = useState(initialStep)
   const [currentStep, setCurrentStep] = useState(0)
   const [scriptContent, setScriptContent] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -116,33 +130,143 @@ export default function MoviePlacement() {
   const [tempScriptContent, setTempScriptContent] = useState('')
   // Video generation state
   const [videoClips, setVideoClips] = useState<VideoClip[]>([])
-  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null)
+  
+  // Support both projectId and taskId from URL
+  const projectIdParam = searchParams.get('projectId')
+  const taskIdParam = searchParams.get('taskId')
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(taskIdParam)
   const [currentTask, setCurrentTask] = useState<VideoTask | null>(null)
   const [videoGenerationProgress, setVideoGenerationProgress] = useState(0)
   const [isGeneratingVideos, setIsGeneratingVideos] = useState(false)
   const [characterDescriptions, setCharacterDescriptions] = useState<Record<string, string>>({})
   const [parsedScript, setParsedScript] = useState<ReturnType<typeof parseScript> | null>(null)
-
-  // Poll for task status every 30 seconds
+  
+  // New states for enhanced workflow control
+  const [isVideoCompleted, setIsVideoCompleted] = useState(false)  // 视频是否已生成完成
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false)    // 离开弹窗
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)  // 待跳转路径
+  const [visitedSteps, setVisitedSteps] = useState<number[]>([1])  // 已访问过的步骤
+  
+  // Derived state - completed video clips
+  const completedClips = currentTask?.clips.filter(c => c.status === 'completed') || []
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
+  
+  // Merged video state
+  const [mergedVideoUrl, setMergedVideoUrl] = useState<string | null>(null)
+  const [isMergingVideos, setIsMergingVideos] = useState(false)
+  const [mergeError, setMergeError] = useState<string | null>(null)
+  
+  // Prompt dialog state
+  const [promptDialog, setPromptDialog] = useState(false)
+  const [selectedPrompt, setSelectedPrompt] = useState('')
+  
+  // Regenerate dialog state
+  const [regenerateDialog, setRegenerateDialog] = useState(false)
+  const [regenerateClip, setRegenerateClip] = useState<any>(null)
+  const [regeneratePrompt, setRegeneratePrompt] = useState('')
+  
+  // Handle open regenerate dialog
+  const handleOpenRegenerate = (clip: any) => {
+    setRegenerateClip(clip)
+    setRegeneratePrompt(clip.prompt || '')
+    setRegenerateDialog(true)
+  }
+  
+  // 检查视频是否已完成
   useEffect(() => {
-    if (!currentTaskId || !isGeneratingVideos) return
+    if (currentTask && currentTask.status === 'completed') {
+      setIsVideoCompleted(true)
+    }
+  }, [currentTask])
+
+  // 检查合并视频状态
+  useEffect(() => {
+    if (!currentTaskId || step !== 5) return
+    
+    const checkMergedVideo = async () => {
+      try {
+        const info = await getMergedVideoInfo(currentTaskId)
+        if (info.isMerged && info.mergedVideoUrl) {
+          setMergedVideoUrl(info.mergedVideoUrl)
+        }
+      } catch (error) {
+        console.error('Error checking merged video:', error)
+      }
+    }
+    
+    checkMergedVideo()
+  }, [currentTaskId, step])
+
+  // 处理视频合并
+  const handleMergeVideos = async () => {
+    if (!currentTaskId || isMergingVideos) return
+    
+    setMergeError(null)
+    setIsMergingVideos(true)
+    try {
+      const result = await mergeVideoClips(currentTaskId)
+      setMergedVideoUrl(result.mergedVideoUrl)
+    } catch (error: any) {
+      console.error('Error merging videos:', error)
+      setMergeError(error?.message || '视频合成失败，请稍后重试')
+    } finally {
+      setIsMergingVideos(false)
+    }
+  }
+
+  // 加载项目时获取视频任务数据
+  useEffect(() => {
+    if (!currentTaskId) return
+    
+    const loadTask = async () => {
+      try {
+        const task = await getVideoTask(currentTaskId)
+        setCurrentTask(task)
+        
+        // 如果视频已完成，设置相关状态
+        if (task.status === 'completed') {
+          setIsVideoCompleted(true)
+          // 解析剧本获取视频片段信息
+          if (task.script) {
+            const parsed = parseScript(task.script, task.aspectRatio || '16:9')
+            setParsedScript(parsed)
+            setVideoClips(parsed.clips)
+          }
+        }
+        
+        // 如果视频正在生成，启动轮询
+        if (task.status === 'processing') {
+          setIsGeneratingVideos(true)
+        }
+      } catch (error) {
+        console.error('Failed to load video task:', error)
+      }
+    }
+    
+    loadTask()
+  }, [currentTaskId])
+
+  // 继续轮询当切换步骤时（只要有任务ID就继续）
+  useEffect(() => {
+    if (!currentTaskId) return
     
     const pollInterval = setInterval(async () => {
       try {
         const task = await getVideoTask(currentTaskId)
         setCurrentTask(task)
         
-        // Calculate progress
+        // 计算进度
         const completed = task.clips.filter(c => c.status === 'completed').length
         const total = task.clips.length
         setVideoGenerationProgress(Math.round((completed / total) * 100))
         
-        // Update current status
+        // 更新状态
         const processing = task.clips.find(c => c.status === 'processing')
         const failed = task.clips.find(c => c.status === 'failed')
         
         if (task.status === 'completed') {
           setIsGeneratingVideos(false)
+          setIsVideoCompleted(true)
           setCurrentStatus(`✅ 全部视频生成完成！共 ${completed} 个片段`)
         } else if (task.status === 'failed') {
           setIsGeneratingVideos(false)
@@ -155,10 +279,10 @@ export default function MoviePlacement() {
       } catch (error) {
         console.error('Error polling task:', error)
       }
-    }, 30000)
+    }, 10000)  // 每10秒轮询
     
     return () => clearInterval(pollInterval)
-  }, [currentTaskId, isGeneratingVideos])
+  }, [currentTaskId])
 
   // Save project function
   const handleSaveProject = async () => {
@@ -208,6 +332,81 @@ export default function MoviePlacement() {
       setIsSaving(false)
     }
   }
+  
+  // 处理离开页面的导航
+  const handleNavigate = (path: string) => {
+    // 如果有未保存的内容，弹出确认对话框
+    const hasContent = productInfo.name || productInfo.description || scriptContent || currentTaskId
+    const isProcessing = isGenerating || isGeneratingVideos
+    
+    if (hasContent && (isProcessing || !currentProjectId)) {
+      // 有内容且正在处理或新建项目，弹出保存询问
+      setPendingNavigation(path)
+      setShowLeaveDialog(true)
+    } else {
+      navigate(path)
+    }
+  }
+  
+  // 确认离开并保存
+  const handleConfirmLeave = async () => {
+    await handleSaveProject()
+    setShowLeaveDialog(false)
+    if (pendingNavigation) {
+      navigate(pendingNavigation)
+    }
+  }
+  
+  // 不保存直接离开
+  const handleDiscardLeave = () => {
+    setShowLeaveDialog(false)
+    if (pendingNavigation) {
+      navigate(pendingNavigation)
+    }
+  }
+  
+  // 取消离开
+  const handleCancelLeave = () => {
+    setShowLeaveDialog(false)
+    setPendingNavigation(null)
+  }
+  
+  // 处理步骤切换
+  const handleStepChange = (newStep: number) => {
+    // 记录已访问的步骤
+    if (!visitedSteps.includes(newStep)) {
+      setVisitedSteps(prev => [...prev, newStep])
+    }
+    
+    // 如果视频已完成，可以自由切换步骤1-5
+    if (isVideoCompleted || newStep === 5) {
+      setStep(newStep)
+      return
+    }
+    
+    // 未完成时的规则：
+    // - 可以前进到下一步
+    // - 可以返回上一步
+    // - 可以返回已访问过的任意步骤
+    const currentStepNum = step
+    
+    if (newStep > currentStepNum) {
+      // 前进：只能到下一步或已访问过的步骤
+      if (newStep === currentStepNum + 1 || visitedSteps.includes(newStep)) {
+        setStep(newStep)
+      }
+    } else {
+      // 后退：可以返回上一步或已访问过的任意步骤
+      setStep(newStep)
+    }
+  }
+  
+  // 记录初始步骤访问
+  useEffect(() => {
+    if (!visitedSteps.includes(step)) {
+      setVisitedSteps(prev => [...prev, step])
+    }
+  }, [step])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0]
@@ -224,6 +423,43 @@ export default function MoviePlacement() {
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  // 处理粘贴的图片URL
+  const handleImageUrlPaste = (url: string) => {
+    if (!url) return
+    
+    // 验证是否为有效的 HTTPS URL
+    if (!url.startsWith('https://')) {
+      alert('请输入有效的 HTTPS 图片地址')
+      return
+    }
+    
+    // 检查是否为有效的图片URL（以常见图片扩展名结尾）
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp']
+    const isValidImage = validExtensions.some(ext => url.toLowerCase().includes(ext)) || 
+                         url.includes('image') ||
+                         url.includes('img')
+    
+    if (!isValidImage && !url.match(/\.(jpg|jpeg|png|webp|gif|bmp)(\?.*)?$/i)) {
+      // 尝试更严格的验证
+      const hasValidExtension = url.toLowerCase().match(/\.(jpg|jpeg|png|webp|gif|bmp)(\?.*)?$/)
+      if (!hasValidExtension) {
+        alert('请输入有效的图片地址（如 https://example.com/image.jpg）')
+        return
+      }
+    }
+    
+    // 找到第一个空位
+    const emptyIdx = productInfo.images.findIndex(img => !img || img === '')
+    if (emptyIdx === -1) {
+      alert('图片已满，请先删除一张')
+      return
+    }
+    
+    const newImages = [...productInfo.images]
+    newImages[emptyIdx] = url
+    setProductInfo({ ...productInfo, images: newImages })
   }
 
   const removeImage = (index: number) => {
@@ -248,9 +484,30 @@ export default function MoviePlacement() {
   }
 
   const handleStartVideoGeneration = async () => {
-    if (!scriptContent) return
+    // 如果已有任务，直接跳转到视频预览页面
+    if (currentTask && currentTask.clips.length > 0) {
+      setStep(4)
+      return
+    }
+    
+    if (!scriptContent) {
+      alert('请先生成剧本')
+      return
+    }
+    
+    console.log('[DEBUG] scriptContent:', scriptContent.substring(0, 500))
+    console.log('[DEBUG] scriptContent full:', scriptContent)
     
     const parsed = parseScript(scriptContent, aspectRatio)
+    console.log('[DEBUG] Parsed script:', JSON.stringify(parsed, null, 2))
+    console.log('[DEBUG] Clips:', parsed.clips)
+    console.log('[DEBUG] Scenes:', parsed.scenes)
+    
+    if (!parsed.clips || parsed.clips.length === 0) {
+      alert('剧本解析失败，请重新生成剧本')
+      return
+    }
+    
     setParsedScript(parsed)
     setVideoClips(parsed.clips)
     
@@ -302,10 +559,7 @@ export default function MoviePlacement() {
   }
 
   const handleSubmit = async () => {
-    if (!productInfo.images || productInfo.images.length === 0 || !productInfo.images.some(img => img)) {
-      alert('请上传产品图片（必填）')
-      return
-    }
+    // 产品图片不再是必填项（使用文生视频模式）
     if (!productInfo.description || productInfo.description.trim() === '') {
       alert('请填写产品描述（必填）')
       return
@@ -369,37 +623,29 @@ export default function MoviePlacement() {
   }
 
   const movies = selectedMovieType ? sampleMovies[selectedMovieType] || [] : []
-  const canProceedFromStep1 = productInfo.name && productInfo.description && productInfo.images.some(img => img)
+  // 产品图片不再是必填项
+  const canProceedFromStep1 = productInfo.name && productInfo.description
   const progressPercent = (currentStep / 6) * 100
 
   return (
     <div className="min-h-screen bg-luxury-950">
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
-          <Logo size="md" />
-
-          <div className="flex items-center gap-1 p-1 bg-luxury-800/50 rounded-xl border border-glass-border">
+          {/* Left: Back Button */}
+          <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/create-guide')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all text-luxury-400 hover:text-white hover:bg-luxury-700"
+              onClick={() => handleNavigate(returnPath)}
+              className="flex items-center gap-2 px-3 py-2 text-luxury-400 hover:text-white hover:bg-luxury-700 rounded-lg transition-colors"
+              title="返回"
             >
-              <Layers className="w-4 h-4" />
-              自由混合
+              <ArrowLeft className="w-5 h-5" />
             </button>
-            <button
-              onClick={() => navigate('/ai-agent')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all text-luxury-400 hover:text-white hover:bg-luxury-700"
-            >
-              <Bot className="w-4 h-4" />
-              智能代理
-            </button>
-            <button
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-ambient-blue to-ambient-purple text-white shadow-soft"
-            >
-              <Clapperboard className="w-4 h-4" />
-              趣味玩法
-            </button>
+            {pageTitle && (
+              <span className="text-lg font-medium text-white">{pageTitle}</span>
+            )}
           </div>
+
+          {/* Center: Empty - no mode switching buttons */}
 
           <div className="flex items-center gap-3">
             <Link to="/pricing" className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-ambient-purple to-ambient-pink text-white text-sm rounded-lg opacity-70 hover:opacity-100 transition-opacity">
@@ -428,27 +674,11 @@ export default function MoviePlacement() {
         </div>
       </nav>
 
-      <main className="pt-24 pb-12">
+      <main className="pt-20 pb-12">
         <div className="max-w-4xl mx-auto px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-10"
-          >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-glass-light rounded-full border border-glass-border mb-4">
-              <Clapperboard className="w-3.5 h-3.5 text-ambient-purple" />
-              <span className="text-xs text-luxury-300">趣味玩法</span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-semibold text-white mb-3">
-              将你的产品植入<span className="gradient-text">任何一部电影</span>
-            </h1>
-            <p className="text-luxury-400 text-base max-w-xl mx-auto">
-              让经典角色为你做广告，打造独特的品牌记忆点
-            </p>
-          </motion.div>
 
-          <div className="flex items-center justify-center gap-2 mb-8">
-            {[1, 2, 3, 4].map((s) => (
+          <div className="flex items-center justify-center gap-2 mt-20 mb-8">
+            {[1, 2, 3, 4, 5].map((s) => (
               <div key={s} className="flex items-center">
                 <div className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
                   step >= s 
@@ -464,7 +694,7 @@ export default function MoviePlacement() {
                     {stepLabels[s - 1]}
                   </span>
                 </div>
-                {s < 4 && <span className="text-luxury-500 mx-2">→</span>}
+                {s < 5 && <span className="text-luxury-500 mx-2">→</span>}
               </div>
             ))}
           </div>
@@ -540,7 +770,7 @@ export default function MoviePlacement() {
 
                 <div className="mt-6">
                   <label className="text-xs font-medium text-luxury-400 uppercase tracking-wider mb-2 block">
-                    产品图片 <span className="text-luxury-500">*必填 (jpg/png, ≤2M, 最多3张)</span>
+                    产品图片 <span className="text-luxury-500">(可选, jpg/png, ≤2M, 最多3张)</span>
                   </label>
                   <div className="flex gap-3">
                     {[0, 1, 2].map((idx) => (
@@ -569,6 +799,41 @@ export default function MoviePlacement() {
                       </div>
                     ))}
                   </div>
+                  
+                  {/* 图片URL输入框 */}
+                  <div className="mt-3">
+                    <label className="text-xs font-medium text-luxury-400 uppercase tracking-wider mb-2 block">
+                      或粘贴图片地址（直接图片链接，如 https://xxx.jpg 或 https://xxx.png）
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        id="imageUrlInput"
+                        placeholder="https://example.com/product.jpg"
+                        className="flex-1 bg-luxury-950/50 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-luxury-600 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 transition-all text-sm"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const input = e.target as HTMLInputElement
+                            handleImageUrlPaste(input.value)
+                            input.value = ''
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => {
+                          const input = document.getElementById('imageUrlInput') as HTMLInputElement
+                          handleImageUrlPaste(input.value)
+                          input.value = ''
+                        }}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-500 transition-colors text-sm"
+                      >
+                        添加
+                      </button>
+                    </div>
+                    <p className="text-xs text-luxury-500 mt-1">
+                      支持 .jpg .jpeg .png .webp .gif 格式，请确保是直接的图片链接
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -586,7 +851,14 @@ export default function MoviePlacement() {
                   保存
                 </button>
                 <button
-                  onClick={() => setStep(2)}
+                  onClick={() => {
+                    // 如果步骤2已访问过，直接跳转；否则进入步骤2
+                    if (visitedSteps.includes(2)) {
+                      setStep(2)
+                    } else {
+                      handleStepChange(2)
+                    }
+                  }}
                   disabled={!canProceedFromStep1}
                   className="btn-primary px-8 py-3 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -714,7 +986,7 @@ export default function MoviePlacement() {
 
               <div className="flex justify-between items-center">
                 <button
-                  onClick={() => setStep(1)}
+                  onClick={() => handleStepChange(1)}
                   className="btn-secondary px-8 py-3"
                 >
                   上一步
@@ -806,7 +1078,7 @@ export default function MoviePlacement() {
 
                 <div className="flex justify-between items-center mt-6">
                   <button
-                    onClick={() => setStep(2)}
+                    onClick={() => handleStepChange(2)}
                     disabled={isGenerating || isEditingScript}
                     className="btn-secondary px-8 py-3 flex items-center gap-2 disabled:opacity-50"
                   >
@@ -846,12 +1118,23 @@ export default function MoviePlacement() {
                       {isEditingScript ? '确认修改' : '修改剧本'}
                     </button>
                     <button
-                      onClick={handleStartVideoGeneration}
+                      onClick={() => {
+                        if (currentTask && currentTask.clips.length > 0) {
+                          // 如果步骤4已访问过，直接跳转；否则进入步骤4
+                          if (visitedSteps.includes(4)) {
+                            setStep(4)
+                          } else {
+                            setStep(4)
+                          }
+                        } else {
+                          handleStartVideoGeneration()
+                        }
+                      }}
                       disabled={isGenerating || !scriptContent || isGeneratingVideos || scriptEdited}
                       className="btn-primary px-8 py-3 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Play className="w-4 h-4" />
-                      {isGeneratingVideos ? '生成中...' : '开始生成视频'}
+                      {currentTask && currentTask.clips.length > 0 ? '下一步' : '开始生成视频'}
                     </button>
                   </div>
                 </div>
@@ -890,81 +1173,175 @@ export default function MoviePlacement() {
                 
                 {currentTask && currentTask.clips.length > 0 ? (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {currentTask.clips.map((clip, index) => (
-                        <div key={clip.id || index} className="bg-luxury-900/50 rounded-xl overflow-hidden border border-white/10">
-                          <div className="relative aspect-video bg-black">
-                            {clip.status === 'completed' && clip.videoUrl ? (
-                              <video 
-                                src={clip.videoUrl} 
-                                controls 
-                                className="w-full h-full object-contain"
-                                poster={clip.thumbnailUrl}
-                              />
-                            ) : clip.status === 'processing' ? (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Loader2 className="w-8 h-8 text-luxury-600 animate-spin" />
-                              </div>
-                            ) : clip.status === 'failed' ? (
-                              <div className="w-full h-full flex items-center justify-center flex-col">
-                                <Video className="w-8 h-8 text-luxury-600 mb-2" />
-                                <p className="text-xs text-red-400">{clip.error || '生成失败'}</p>
-                              </div>
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Loader2 className="w-8 h-8 text-luxury-600 animate-spin" />
-                              </div>
-                            )}
-                            <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 rounded text-xs text-white">
-                              {videoClips[index] ? `${videoClips[index].startTime}-${videoClips[index].endTime}秒` : ''}
+                    {/* 主播放器 */}
+                    {completedClips.length > 0 && (
+                      <div className="card overflow-hidden">
+                        <div className="relative aspect-video bg-black">
+                          <video
+                            key={currentVideoIndex}
+                            src={completedClips[currentVideoIndex]?.videoUrl}
+                            controls
+                            className="w-full h-full object-contain"
+                            autoPlay
+                          />
+                          {/* 视频导航 */}
+                          {completedClips.length > 1 && (
+                            <>
+                              <button 
+                                onClick={() => setCurrentVideoIndex(i => Math.max(0, i - 1))}
+                                disabled={currentVideoIndex === 0}
+                                className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <ChevronLeft className="w-6 h-6" />
+                              </button>
+                              <button 
+                                onClick={() => setCurrentVideoIndex(i => Math.min(completedClips.length - 1, i + 1))}
+                                disabled={currentVideoIndex === completedClips.length - 1}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <ChevronRight className="w-6 h-6" />
+                              </button>
+                            </>
+                          )}
+                          {/* 片段指示器 */}
+                          {completedClips.length > 1 && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1">
+                              {completedClips.map((_, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => setCurrentVideoIndex(idx)}
+                                  className={`w-2 h-2 rounded-full transition-all ${
+                                    idx === currentVideoIndex ? 'bg-white w-4' : 'bg-white/50 hover:bg-white/70'
+                                  }`}
+                                />
+                              ))}
                             </div>
-                            <div className="absolute top-2 right-2">
-                              {clip.status === 'pending' && (
-                                <div className="px-2 py-1 bg-yellow-600 rounded-full text-xs text-white flex items-center gap-1">
-                                  等待中
-                                </div>
-                              )}
-                              {clip.status === 'processing' && (
-                                <div className="px-2 py-1 bg-blue-600 rounded-full text-xs text-white flex items-center gap-1">
-                                  <Loader2 className="w-3 h-3 animate-spin" /> 生成中
-                                </div>
-                              )}
-                              {clip.status === 'completed' && (
-                                <div className="px-2 py-1 bg-green-600 rounded-full text-xs text-white flex items-center gap-1">
-                                  <Check className="w-3 h-3" /> 完成
-                                </div>
-                              )}
-                              {clip.status === 'failed' && (
-                                <div className="px-2 py-1 bg-red-600 rounded-full text-xs text-white">
-                                  失败
-                                </div>
-                              )}
+                          )}
+                        </div>
+                        <div className="p-4 border-t border-glass-border">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="text-base font-semibold text-white">{currentTask.name}</h4>
+                              <p className="text-sm text-luxury-400 mt-1">
+                                片段 {currentVideoIndex + 1}: {completedClips[currentVideoIndex]?.prompt?.substring(0, 50)}...
+                              </p>
                             </div>
-                          </div>
-                          <div className="p-3">
-                            <p className="text-sm text-luxury-300">
-                              片段 {index + 1}: {videoClips[index]?.sceneId || `clip_${index}`}
-                            </p>
-                            <p className="text-xs text-luxury-500 mt-1 truncate">
-                              {videoClips[index]?.prompt?.substring(0, 60)}...
-                            </p>
+                            <div className={`px-3 py-1 rounded-full text-sm text-white ${
+                              currentTask.status === 'completed' ? 'bg-green-600' :
+                              currentTask.status === 'processing' ? 'bg-blue-600' :
+                              currentTask.status === 'pending' ? 'bg-yellow-600' :
+                              currentTask.status === 'failed' ? 'bg-red-600' : 'bg-gray-600'
+                            }`}>
+                              {currentTask.status === 'completed' ? '已完成' :
+                               currentTask.status === 'processing' ? '生成中' :
+                               currentTask.status === 'pending' ? '等待中' :
+                               currentTask.status === 'failed' ? '失败' : currentTask.status}
+                            </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                    
-                    {Object.keys(characterDescriptions).length > 0 && (
-                      <div className="bg-luxury-800/30 rounded-lg p-4 border border-white/5">
-                        <p className="text-sm text-luxury-400 mb-2">
-                          <span className="text-ambient-purple">🎭 人物一致性保持:</span>
-                        </p>
-                        {Object.entries(characterDescriptions).map(([char, desc]) => (
-                          <p key={char} className="text-xs text-luxury-500">
-                            • {char}: {desc.substring(0, 80)}...
-                          </p>
-                        ))}
                       </div>
                     )}
+
+                    {/* 视频片段列表 - 增加了按钮 */}
+                    <div className="card p-4">
+                      <h4 className="text-base font-medium text-white mb-4">视频片段 ({currentTask.clips.length}个)</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {currentTask.clips.map((clip, idx) => (
+                          <div key={clip.id || idx} className="space-y-2">
+                            {/* 视频预览区域 - 点击在主播放器中播放 */}
+                            <button
+                              onClick={() => {
+                                if (clip.status === 'completed' && clip.videoUrl) {
+                                  const completedIdx = completedClips.findIndex(c => c.id === clip.id)
+                                  if (completedIdx !== -1) {
+                                    setCurrentVideoIndex(completedIdx)
+                                  }
+                                }
+                              }}
+                              disabled={clip.status !== 'completed'}
+                              className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all w-full ${
+                                clip.status === 'completed' 
+                                  ? 'border-transparent hover:border-primary cursor-pointer' 
+                                  : 'border-luxury-700 cursor-not-allowed opacity-60'
+                              }`}
+                            >
+                              {clip.status === 'completed' && clip.videoUrl ? (
+                                <>
+                                  <div className="absolute inset-0 bg-black">
+                                    <video
+                                      src={clip.videoUrl}
+                                      className="w-full h-full object-cover"
+                                      muted
+                                      ref={el => {
+                                        if (el) {
+                                          el.currentTime = 0
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                      <Play className="w-8 h-8 text-white ml-1" />
+                                    </div>
+                                  </div>
+                                </>
+                              ) : clip.status === 'processing' ? (
+                                <div className="w-full h-full flex items-center justify-center bg-luxury-800">
+                                  <Loader2 className="w-8 h-8 text-luxury-500 animate-spin" />
+                                </div>
+                              ) : clip.status === 'failed' ? (
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-luxury-800">
+                                  <X className="w-8 h-8 text-red-500" />
+                                  <span className="text-xs text-red-400 mt-1">失败</span>
+                                </div>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-luxury-800">
+                                  <Clock className="w-8 h-8 text-luxury-500" />
+                                </div>
+                              )}
+                              <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/70 rounded text-xs text-white">
+                                {clip.startTime}-{clip.endTime}秒
+                              </div>
+                            </button>
+                            
+                            {/* 片段操作按钮 */}
+                            <div className="flex gap-1">
+                              {clip.status === 'completed' && clip.videoUrl && (
+                                <button
+                                  onClick={() => {
+                                    const a = document.createElement('a')
+                                    a.href = clip.videoUrl!
+                                    a.download = `片段${idx + 1}.mp4`
+                                    a.click()
+                                  }}
+                                  className="flex-1 flex items-center justify-center px-2 py-1.5 bg-luxury-800 hover:bg-luxury-700 rounded text-xs text-luxury-300 transition-colors"
+                                  title="下载"
+                                >
+                                  <Download className="w-3 h-3" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setSelectedPrompt(clip.prompt || '')
+                                  setPromptDialog(true)
+                                }}
+                                className="flex-1 flex items-center justify-center px-2 py-1.5 bg-luxury-800 hover:bg-luxury-700 rounded text-xs text-luxury-300 transition-colors"
+                                title="查看提示词"
+                              >
+                                <FileText className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenRegenerate(clip)}
+                                className="flex-1 flex items-center justify-center px-2 py-1.5 bg-luxury-800 hover:bg-luxury-700 rounded text-xs text-luxury-300 transition-colors"
+                                title="修改视频"
+                              >
+                                <RefreshCw className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="bg-luxury-950/50 border border-white/10 rounded-xl h-96 flex items-center justify-center">
@@ -988,16 +1365,225 @@ export default function MoviePlacement() {
 
                 <div className="flex justify-between items-center mt-6">
                   <button
-                    onClick={() => setStep(3)}
+                    onClick={() => handleStepChange(3)}
                     className="btn-secondary px-8 py-3 flex items-center gap-2"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     上一步
                   </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={handleSaveProject}
+                      disabled={isSaving}
+                      className="flex items-center gap-2 px-4 py-3 bg-luxury-700 text-white rounded-xl hover:bg-luxury-600 transition-colors disabled:opacity-50 text-sm mx-2"
+                    >
+                      {isSaving ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                      保存
+                    </button>
+                    <button
+                      onClick={async () => {
+                        // 跳转到步骤5并开始合成视频
+                        if (currentTaskId && completedClips.length > 0) {
+                          setStep(5)
+                          // 开始合成视频
+                          setMergeError(null)
+                          setIsMergingVideos(true)
+                          try {
+                            const result = await mergeVideoClips(currentTaskId)
+                            setMergedVideoUrl(result.mergedVideoUrl)
+                          } catch (error: any) {
+                            console.error('Error merging videos:', error)
+                            setMergeError(error?.message || '视频合成失败，请稍后重试')
+                          } finally {
+                            setIsMergingVideos(false)
+                          }
+                        }
+                      }}
+                      disabled={!currentTaskId || completedClips.length === 0}
+                      className="px-6 py-3 bg-gradient-to-r from-ambient-purple to-ambient-pink text-white rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Film className="w-4 h-4" />
+                      合成视频
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 5 && currentTaskId && (
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }} 
+              animate={{ opacity: 1, x: 0 }} 
+              className="space-y-6"
+            >
+              <div className="bg-gradient-to-b from-luxury-800/80 to-luxury-900/80 rounded-2xl p-6 border border-white/5">
+                <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+                  <Film className="w-5 h-5 text-ambient-purple" />
+                  最终作品
+                </h3>
+                
+                {/* 最终作品内容 - 只显示一个合并后的视频 */}
+                {completedClips.length > 0 ? (
+                  <>
+                    {/* 任务信息 */}
+                    <div className="bg-luxury-900/50 rounded-xl p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-lg font-semibold text-white">{currentTask?.name || '视频作品'}</h4>
+                          <p className="text-sm text-luxury-400 mt-1">
+                            共 {completedClips.length} 个视频片段 | 总时长 {currentTask?.duration || '15'}秒
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {mergedVideoUrl ? (
+                            <span className="flex items-center gap-2 text-green-400">
+                              <Check className="w-5 h-5" />
+                              已合成
+                            </span>
+                          ) : isMergingVideos ? (
+                            <span className="flex items-center gap-2 text-yellow-400">
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                              合成中...
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-2 text-yellow-400">
+                              <Video className="w-5 h-5" />
+                              未合成
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {/* 查看剧本按钮 */}
+                      {currentTask?.script && (
+                        <button
+                          onClick={() => {
+                            setSelectedPrompt(currentTask.script)
+                            setPromptDialog(true)
+                          }}
+                          className="mt-3 flex items-center gap-2 px-4 py-2 bg-luxury-800 text-luxury-300 rounded-lg hover:bg-luxury-700 transition-colors text-sm"
+                        >
+                          <FileText className="w-4 h-4" />
+                          查看剧本
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 最终视频播放器 - 显示合并后的视频 */}
+                    <div className="card overflow-hidden">
+                      <div className="relative aspect-video bg-black">
+                        {mergeError ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center">
+                            <X className="w-16 h-16 text-red-500 mb-4" />
+                            <p className="text-red-400 text-lg">视频合成失败</p>
+                            <p className="text-luxury-500 text-sm mt-2">{mergeError}</p>
+                          </div>
+                        ) : mergedVideoUrl ? (
+                          <video
+                            src={mergedVideoUrl}
+                            controls
+                            className="w-full h-full object-contain"
+                            autoPlay
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center">
+                            <Video className="w-16 h-16 text-luxury-600 mb-4" />
+                            <p className="text-luxury-400">视频未合成</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4 border-t border-glass-border">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-white">
+                              {mergedVideoUrl ? '合并后的视频' : mergeError ? '合成失败' : ''}
+                            </p>
+                            <p className="text-xs text-luxury-500 mt-1">
+                              共 {completedClips.length} 个片段，总时长 {currentTask?.duration || '15'}秒
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {/* 再次合成按钮 */}
+                            {(mergeError || !mergedVideoUrl) && (
+                              <button
+                                onClick={async () => {
+                                  if (!currentTaskId) return
+                                  setMergeError(null)
+                                  setIsMergingVideos(true)
+                                  try {
+                                    const result = await mergeVideoClips(currentTaskId)
+                                    setMergedVideoUrl(result.mergedVideoUrl)
+                                  } catch (error: any) {
+                                    console.error('Error merging videos:', error)
+                                    setMergeError(error?.message || '视频合成失败')
+                                  } finally {
+                                    setIsMergingVideos(false)
+                                  }
+                                }}
+                                disabled={isMergingVideos}
+                                className="flex items-center gap-2 px-4 py-2 bg-luxury-800 text-luxury-300 rounded-lg hover:bg-luxury-700 transition-colors text-sm disabled:opacity-50"
+                              >
+                                {isMergingVideos ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Film className="w-4 h-4" />
+                                )}
+                                {isMergingVideos ? '合成中...' : '再次合成'}
+                              </button>
+                            )}
+                            {/* 下载按钮 */}
+                            <button
+                              onClick={() => {
+                                if (!mergedVideoUrl || mergeError) {
+                                  alert('请先合成视频')
+                                  return
+                                }
+                                const url = mergedVideoUrl
+                                if (url) {
+                                  const a = document.createElement('a')
+                                  a.href = url
+                                  a.download = `最终作品.mp4`
+                                  a.click()
+                                }
+                              }}
+                              disabled={!mergedVideoUrl || !!mergeError || isMergingVideos}
+                              className="flex items-center gap-2 px-4 py-2 bg-luxury-800 text-luxury-300 rounded-lg hover:bg-luxury-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Download className="w-4 h-4" />
+                              下载
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-12">
+                    <Film className="w-16 h-16 text-luxury-600 mx-auto mb-4" />
+                    <p className="text-luxury-400">暂无生成完成的视频</p>
+                    <p className="text-sm text-luxury-500 mt-2">请先在视频预览步骤生成视频</p>
+                  </div>
+                )}
+              </div>
+
+              {/* 底部操作栏 */}
+              <div className="flex justify-between items-center">
+                <button
+                  onClick={() => handleStepChange(4)}
+                  className="btn-secondary px-8 py-3 flex items-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  上一步
+                </button>
+                <div className="flex items-center gap-2">
                   <button 
                     onClick={handleSaveProject}
                     disabled={isSaving}
-                    className="flex items-center gap-2 px-4 py-3 bg-luxury-700 text-white rounded-xl hover:bg-luxury-600 transition-colors disabled:opacity-50 text-sm mx-4"
+                    className="flex items-center gap-2 px-4 py-3 bg-luxury-700 text-white rounded-xl hover:bg-luxury-600 transition-colors disabled:opacity-50 text-sm mx-2"
                   >
                     {isSaving ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -1006,18 +1592,177 @@ export default function MoviePlacement() {
                     )}
                     保存
                   </button>
-                  <button
-                    className="btn-primary px-8 py-3 flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    下载视频
-                  </button>
                 </div>
               </div>
             </motion.div>
           )}
         </div>
       </main>
+
+      {/* Video Modal */}
+      {videoModalOpen && selectedVideoUrl && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+          <button 
+            onClick={() => setVideoModalOpen(false)}
+            className="absolute top-4 right-4 p-2 hover:bg-luxury-800 rounded-lg"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+          <video
+            src={selectedVideoUrl}
+            controls
+            autoPlay
+            className="max-w-full max-h-full rounded-lg"
+          />
+        </div>
+      )}
+
+      {/* Prompt Dialog */}
+      {promptDialog && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-luxury-900 rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-white">视频提示词</h3>
+              <button onClick={() => setPromptDialog(false)} className="p-1 hover:bg-luxury-800 rounded-lg">
+                <X className="w-5 h-5 text-luxury-400" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <pre className="text-sm text-luxury-300 whitespace-pre-wrap">{selectedPrompt}</pre>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button onClick={() => setPromptDialog(false)} className="btn-primary">
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Regenerate Dialog */}
+      {regenerateDialog && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-luxury-900 rounded-2xl p-6 max-w-2xl w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-white">修改视频提示词</h3>
+              <button onClick={() => setRegenerateDialog(false)} className="p-1 hover:bg-luxury-800 rounded-lg">
+                <X className="w-5 h-5 text-luxury-400" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-luxury-400 mb-2 block">提示词内容</label>
+                <textarea
+                  value={regeneratePrompt}
+                  onChange={(e) => setRegeneratePrompt(e.target.value)}
+                  className="w-full bg-luxury-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-luxury-600 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 transition-all h-48 resize-none"
+                  placeholder="输入视频提示词..."
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setRegenerateDialog(false)}
+                  className="px-4 py-2 bg-luxury-800 text-luxury-300 rounded-lg hover:bg-luxury-700"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => {
+                    // 这里可以添加重新生成逻辑
+                    setRegenerateDialog(false)
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-ambient-purple to-ambient-pink text-white rounded-lg hover:opacity-90"
+                >
+                  重新生成
+                </button>
+              </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* Merge Error Dialog */}
+      {mergeError && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-luxury-900 rounded-2xl p-6 max-w-md w-full border border-red-500/30">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                <X className="w-5 h-5 text-red-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white">视频合成失败</h3>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setMergeError(null)}
+                className="px-4 py-2 bg-luxury-800 text-luxury-300 rounded-lg hover:bg-luxury-700"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Confirmation Dialog */}
+      {showLeaveDialog && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-luxury-900 rounded-2xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-semibold text-white mb-4">离开确认</h3>
+            <p className="text-luxury-300 mb-6">
+              {isGenerating || isGeneratingVideos 
+                ? '项目正在处理中，是否保存当前进度？'
+                : '项目有未保存的内容，是否保存？'}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleDiscardLeave}
+                className="px-4 py-2 bg-luxury-800 text-luxury-300 rounded-lg hover:bg-luxury-700"
+              >
+                不保存
+              </button>
+              <button
+                onClick={handleConfirmLeave}
+                disabled={isSaving}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
+              >
+                {isSaving ? '保存中...' : '保存并离开'}
+              </button>
+              <button
+                onClick={handleCancelLeave}
+                className="px-4 py-2 bg-luxury-700 text-white rounded-lg hover:bg-luxury-600"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Playback Modal */}
+      {videoModalOpen && selectedVideoUrl && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setVideoModalOpen(false)}
+        >
+          <div 
+            className="relative w-full max-w-4xl bg-luxury-900 rounded-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setVideoModalOpen(false)}
+              className="absolute top-4 right-4 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <video 
+              src={selectedVideoUrl} 
+              controls 
+              autoPlay
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { 
   ArrowLeft, Sparkles, Plus, Layers, Bot,
   Send, Image, FileText, Share2, ZoomIn, ZoomOut,
@@ -7,11 +7,15 @@ import {
   Clapperboard
 } from 'lucide-react'
 import { useStore, type AIProject } from '../store'
-import { generateAIResponse, INITIAL_GREETING, getProgress } from '../services/aiService'
+// 使用新的多智能体系统
+import { generateAIResponse as generateAgentResponse } from '../services/agentSystem'
+// 使用旧的辅助函数
+import { INITIAL_GREETING, getProgress } from '../services/aiService'
 import Logo from '../components/Logo'
+import ConfirmDialog, { useConfirmDialog } from '../components/ConfirmDialog'
 
 // Navbar for AI Agent Page (same style as CreationGuide, with 智能代理 selected)
-function Navbar() {
+function Navbar({ returnPath = '/profile' }: { returnPath?: string }) {
   const navigate = useNavigate()
   const { user, isLoggedIn, logout, setShowLoginModal } = useStore()
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -19,32 +23,18 @@ function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="w-full px-8 py-4 flex items-center justify-between">
-        {/* Left: Logo */}
-        <Logo size="md" />
-
-        {/* Center: Creation Mode Tabs */}
-        <div className="flex items-center gap-1 p-1 bg-luxury-800/50 rounded-xl border border-glass-border">
+        {/* Left: Back Button */}
+        <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate('/create-guide')}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all text-luxury-400 hover:text-white hover:bg-luxury-700"
+            onClick={() => navigate(returnPath)}
+            className="flex items-center gap-2 px-3 py-2 text-luxury-400 hover:text-white hover:bg-luxury-700 rounded-lg transition-colors"
+            title="返回"
           >
-            <Layers className="w-4 h-4" />
-            自由混合
-          </button>
-          <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-ambient-blue to-ambient-purple text-white shadow-soft"
-          >
-            <Bot className="w-4 h-4" />
-            智能代理
-          </button>
-          <button
-            onClick={() => navigate('/movie-placement-home')}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all text-luxury-400 hover:text-white hover:bg-luxury-700"
-          >
-            <Clapperboard className="w-4 h-4" />
-            趣味玩法
+            <ArrowLeft className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Center: Empty - no mode switching buttons */}
 
         {/* Right: User actions */}
         <div className="flex items-center gap-3">
@@ -240,7 +230,8 @@ function ChatArea({ messages, projectName, onProjectNameChange, onSend, isEmpty,
           </div>
         ) : (
           messages.map((msg) => (
-            <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'flex-row-reverse' : ''} ${msg.role === 'ai' ? 'mt-3' : ''}`}>
+              {/* 头像 */}
               <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                 msg.role === 'user' ? 'bg-ambient-blue' : 'bg-ambient-purple'
               }`}>
@@ -250,12 +241,23 @@ function ChatArea({ messages, projectName, onProjectNameChange, onSend, isEmpty,
                   <BotIcon className="w-4 h-4 text-white" />
                 )}
               </div>
-              <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                msg.role === 'user' 
-                  ? 'bg-ambient-blue/20 text-white' 
-                  : 'bg-luxury-800 text-luxury-200'
-              }`}>
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+              
+              {/* 头像右侧内容 */}
+              <div className="flex flex-col max-w-[80%]">
+                {/* AI 消息显示智能体名称（与头像中心水平对齐） */}
+                {msg.role === 'ai' && (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-ambient-blue to-ambient-purple text-white self-start ml-2 mb-1">
+                    需求收集师
+                  </span>
+                )}
+                {/* 聊天框 */}
+                <div className={`rounded-2xl px-4 py-2 ${
+                  msg.role === 'user' 
+                    ? 'bg-ambient-blue/20 text-white' 
+                    : 'bg-luxury-800 text-luxury-200'
+                }`}>
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                </div>
               </div>
             </div>
           ))
@@ -529,8 +531,15 @@ const convertUploadedFiles = (files: UploadedFile[]) => {
 
 export default function AIAgent() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const { aiProjects, addAIProject, updateAIProject, deleteAIProject } = useStore()
+  
+  // Delete confirmation dialog
+  const deleteConfirm = useConfirmDialog()
+  
+  // Get return path from location state - use useLocation to get fresh state
+  const returnPath = (location.state as { returnPath?: string })?.returnPath || '/ai-agent-chat'
   
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [pendingProjectId, setPendingProjectId] = useState<string | null>(null)
@@ -606,18 +615,33 @@ export default function AIAgent() {
 
   // Handle sending message - now async for AI service
   const handleSend = async (content: string, files?: UploadedFile[]) => {
+    console.log('[handleSend] Called with content:', content.slice(0, 50))
+    console.log('[handleSend] activeProjectId:', activeProjectId, 'pendingProjectId:', pendingProjectId)
+    
     const targetProjectId = activeProjectId || pendingProjectId
-    if (!targetProjectId) return
+    console.log('[handleSend] targetProjectId:', targetProjectId)
+    
+    if (!targetProjectId) {
+      console.error('[handleSend] No project ID available!')
+      return
+    }
+    
     const userMsg = {
       id: Date.now().toString(),
       role: 'user' as const,
       content,
       timestamp: new Date()
     }
+    console.log('[handleSend] Created user message:', userMsg.id)
+    
     // Get current messages
     const project = aiProjects.find(p => p.id === targetProjectId)
+    console.log('[handleSend] Found project:', project?.name, 'messages count:', project?.messages.length)
+    
     const currentMessages = project?.messages || []
     const newMessages = [...currentMessages, userMsg]
+    console.log('[handleSend] Updating project with', newMessages.length, 'messages')
+    
     updateAIProject(targetProjectId, {
       messages: newMessages,
       updatedAt: new Date().toISOString()
@@ -629,13 +653,16 @@ export default function AIAgent() {
     }
     // Simulate AI typing
     setIsTyping(true)
+    console.log('[handleSend] Calling generateAIResponse...')
     try {
       // Call the AI service with conversation history
       const historyForAI = currentMessages
         .filter(m => m.role === 'user' || m.role === 'ai')
         .map(m => ({ role: m.role, content: m.content }))
+      console.log('[handleSend] History length:', historyForAI.length)
       
-      const result = await generateAIResponse(content, historyForAI, files ? convertUploadedFiles(files) : undefined)
+      const result = await generateAgentResponse(content, historyForAI, { projectId: targetProjectId })
+      console.log('[handleSend] generateAgentResponse returned, response length:', result.response.length)
       const aiMsg = {
         id: (Date.now() + 1).toString(),
         role: 'ai' as const,
@@ -643,18 +670,9 @@ export default function AIAgent() {
         timestamp: new Date()
       }
       
-      // Preserve existing canvas data if no new data returned
-      const existingProject = aiProjects.find(p => p.id === targetProjectId)
-      const existingCanvasData = existingProject?.canvasData
-      const canvasData = result.canvasData ? {
-        storyOutline: result.canvasData.storyOutline,
-        script: result.canvasData.script,
-        visualStatus: result.canvasData.visualStatus
-      } : (existingCanvasData || undefined)
       // Use the newMessages array we already have, plus the AI message
       updateAIProject(targetProjectId, {
         messages: [...newMessages, aiMsg],
-        canvasData,
         updatedAt: new Date().toISOString()
       })
       // If this was a pending project, now set it as active to show canvas
@@ -663,7 +681,7 @@ export default function AIAgent() {
         setPendingProjectId(null)
       }
     } catch (error) {
-      console.error('AI response error:', error)
+      console.error('[handleSend] Error caught:', error)
       // Fallback error message
       const errorMsg = {
         id: (Date.now() + 1).toString(),
@@ -700,30 +718,42 @@ export default function AIAgent() {
     updateAIProject(targetProjectId, { name, updatedAt: new Date().toISOString() })
   }
 
-  // Handle delete project
+// Handle delete project with confirmation
   const handleDeleteProject = (projectId: string) => {
-    // If deleting the current active project, clear it and select the first remaining project
-    if (activeProjectId === projectId) {
-      setActiveProjectId(null)
-    }
-    // If deleting the pending project, clear it
-    if (pendingProjectId === projectId) {
-      setPendingProjectId(null)
-    }
+    const project = aiProjects.find(p => p.id === projectId)
+    const projectName = project?.name || '该项目'
     
-    // Delete from store
-    deleteAIProject(projectId)
-    
-    // After deletion, if we deleted the active project, select the first remaining project
-    if (activeProjectId === projectId) {
-      // Use setTimeout to ensure the store is updated
-      setTimeout(() => {
-        const remainingProjects = aiProjects.filter(p => p.id !== projectId)
-        if (remainingProjects.length > 0) {
-          setActiveProjectId(remainingProjects[0].id)
+    deleteConfirm.confirm({
+      title: '删除项目',
+      message: `确定要删除"${projectName}"吗？此操作不可恢复，所有聊天记录将被永久删除。`,
+      confirmText: '删除',
+      cancelText: '取消',
+      variant: 'danger',
+      onConfirm: () => {
+        // If deleting the current active project, clear it and select the first remaining project
+        if (activeProjectId === projectId) {
+          setActiveProjectId(null)
         }
-      }, 0)
-    }
+        // If deleting the pending project, clear it
+        if (pendingProjectId === projectId) {
+          setPendingProjectId(null)
+        }
+        
+        // Delete from store
+        deleteAIProject(projectId)
+        
+        // After deletion, if we deleted the active project, select the first remaining project
+        if (activeProjectId === projectId) {
+          // Use setTimeout to ensure the store is updated
+          setTimeout(() => {
+            const remainingProjects = aiProjects.filter(p => p.id !== projectId)
+            if (remainingProjects.length > 0) {
+              setActiveProjectId(remainingProjects[0].id)
+            }
+          }, 0)
+        }
+      }
+    })
   }
 
   // Convert store projects to sidebar format
@@ -739,9 +769,9 @@ export default function AIAgent() {
   // Determine if canvas should show empty state
   const showEmptyCanvas = !currentProject || !currentProject.canvasData?.storyOutline
 
-  return (
+return (
     <div className="h-screen bg-luxury-950 flex flex-col overflow-hidden">
-      <Navbar />
+      <Navbar returnPath={returnPath} />
       
       {/* Three Column Layout */}
       <div className="flex flex-1 pt-20 overflow-hidden">
@@ -772,6 +802,9 @@ export default function AIAgent() {
           canvasData={currentProject?.canvasData}
         />
       </div>
+      
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm.Dialog}
     </div>
   )
 }

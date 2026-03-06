@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
   Sparkles, Layers, Bot, Clapperboard, Crown, 
-  User, LogOut, MessageSquare, Send, Image, FileText, X, Shield, MessageCircle
+  User, LogOut, MessageSquare, Send, Image, FileText, X, Shield, MessageCircle, Trash2
 } from 'lucide-react'
 import { useStore, type AIProject } from '../store'
+import { generateAIResponse } from '../services/agentSystem'
 import Logo from '../components/Logo'
+import ConfirmDialog, { useConfirmDialog } from '../components/ConfirmDialog'
 
 // Navbar for AI Agent Chat Page - same as CreationGuide but with 智能代理 selected
 function Navbar({ onModeChange }: { onModeChange: (mode: string) => void }) {
@@ -227,7 +229,7 @@ function ChatInput({ onSend, disabled = false }: { onSend: (message: string, fil
               title="托管模式"
             >
               <Shield className="w-3.5 h-3.5" />
-              <span>托管</span>
+              <span>托管模式</span>
             </button>
             <button
               onClick={() => setChatMode('对话')}
@@ -239,7 +241,7 @@ function ChatInput({ onSend, disabled = false }: { onSend: (message: string, fil
               title="对话模式"
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              <span>对话</span>
+              <span>对话模式</span>
             </button>
           </div>
 
@@ -257,13 +259,17 @@ function ChatInput({ onSend, disabled = false }: { onSend: (message: string, fil
 }
 
 // Project Cover Card Component - matching Movie projects style in Profile
-function ProjectCoverCard({ project, onClick }: { project: AIProject; onClick: () => void }) {
+function ProjectCoverCard({ project, onClick, onDelete }: { 
+  project: AIProject; 
+  onClick: () => void;
+  onDelete: () => void;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       onClick={onClick}
-      className="card group cursor-pointer overflow-hidden border-2 border-transparent hover:border-primary transition-all"
+      className="card group cursor-pointer overflow-hidden border-2 border-transparent hover:border-primary transition-all relative"
     >
       <div className="relative aspect-video bg-luxury-800">
         {/* Cover Image - using thumbnail or placeholder */}
@@ -272,10 +278,18 @@ function ProjectCoverCard({ project, onClick }: { project: AIProject; onClick: (
           alt={project.name}
           className="w-full h-full object-cover"
         />
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-luxury-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs">进入项目</span>
-        </div>
+        
+        {/* Delete Button - appears on hover */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+          className="absolute top-2 right-2 p-1.5 bg-white/20 hover:bg-white/40 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+          title="删除项目"
+        >
+          <Trash2 className="w-3.5 h-3.5 text-white" />
+        </button>
       </div>
       <div className="p-3">
         <h4 className="text-white text-sm font-medium truncate">{project.name}</h4>
@@ -289,8 +303,11 @@ function ProjectCoverCard({ project, onClick }: { project: AIProject; onClick: (
 
 export default function AIAgentChat() {
   const navigate = useNavigate()
-  const { aiProjects, addAIProject, isLoggedIn, setShowLoginModal, setShowWelcomeGiftAfterLogin } = useStore()
+  const { aiProjects, addAIProject, deleteAIProject, isLoggedIn, setShowLoginModal, setShowWelcomeGiftAfterLogin } = useStore()
   const [isCreating, setIsCreating] = useState(false)
+  
+  // Delete confirmation dialog
+  const deleteConfirm = useConfirmDialog()
 
   // Handle mode change for navigation tabs
   const handleModeChange = (mode: string) => {
@@ -322,17 +339,28 @@ export default function AIAgentChat() {
     setIsCreating(true)
     
     try {
-      // Create new project
+      // Call AI to generate response
+      const result = await generateAIResponse(content, [], files ? files.map(f => ({ type: f.type, name: f.file.name, preview: f.preview })) : undefined)
+      
+      // Create new project with user message and AI response
       const newProject: AIProject = {
         id: Date.now().toString(),
         name: content.slice(0, 10) + (content.length > 10 ? '...' : ''),
         createdAt: new Date().toISOString(),
-        messages: [{
-          id: Date.now().toString(),
-          role: 'user',
-          content,
-          timestamp: new Date()
-        }],
+        messages: [
+          {
+            id: Date.now().toString(),
+            role: 'user',
+            content,
+            timestamp: new Date()
+          },
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'ai',
+            content: result.response,
+            timestamp: new Date()
+          }
+        ],
         canvasData: {}
       }
       
@@ -340,7 +368,7 @@ export default function AIAgentChat() {
       addAIProject(newProject)
       
       // Navigate to AI Agent page with the new project
-      navigate(`/ai-agent?projectId=${newProject.id}`)
+      navigate(`/ai-agent?projectId=${newProject.id}`, { state: { returnPath: '/ai-agent-chat' } })
     } catch (error) {
       console.error('Failed to create project:', error)
       setIsCreating(false)
@@ -349,7 +377,24 @@ export default function AIAgentChat() {
 
   // Handle project click - navigate to AI Agent page
   const handleProjectClick = (projectId: string) => {
-    navigate(`/ai-agent?projectId=${projectId}`)
+    navigate(`/ai-agent?projectId=${projectId}`, { state: { returnPath: '/ai-agent-chat' } })
+  }
+
+  // Handle delete project with confirmation
+  const handleDeleteProject = (projectId: string) => {
+    const project = aiProjects.find(p => p.id === projectId)
+    const projectName = project?.name || '该项目'
+    
+    deleteConfirm.confirm({
+      title: '删除项目',
+      message: `确定要删除"${projectName}"吗？此操作不可恢复，所有聊天记录将被永久删除。`,
+      confirmText: '删除',
+      cancelText: '取消',
+      variant: 'danger',
+      onConfirm: () => {
+        deleteAIProject(projectId)
+      }
+    })
   }
 
   return (
@@ -404,6 +449,7 @@ export default function AIAgentChat() {
                   key={project.id}
                   project={project}
                   onClick={() => handleProjectClick(project.id)}
+                  onDelete={() => handleDeleteProject(project.id)}
                 />
               ))}
             </div>
@@ -418,6 +464,9 @@ export default function AIAgentChat() {
           )}
         </motion.div>
       </main>
+      
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm.Dialog}
     </div>
   )
 }

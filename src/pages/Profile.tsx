@@ -635,7 +635,7 @@ export default function Profile() {
                               animate={{ opacity: 1, y: 0 }} 
                               transition={{ delay: idx * 0.03 }}
                               className="card group cursor-pointer overflow-hidden"
-                              onClick={() => navigate(`/video-detail/${task.id}`)}
+                              onClick={() => navigate(`/movie-placement?taskId=${task.id}&step=4`)}
                             >
                               {/* 视频封面/状态 */}
                               <div className="relative aspect-video bg-luxury-800">
@@ -1035,7 +1035,7 @@ export default function Profile() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className="card group cursor-pointer overflow-hidden border-2 border-transparent hover:border-primary transition-all relative"
-                                onClick={() => navigate(`/ai-agent?projectId=${project.id}`)}
+                                onClick={() => navigate(`/ai-agent?projectId=${project.id}`, { state: { returnPath: '/profile' } })}
                               >
                                 {/* Delete button */}
                                 <button
@@ -1076,7 +1076,7 @@ export default function Profile() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className="card group cursor-pointer overflow-hidden border-2 border-transparent hover:border-primary transition-all relative"
-                                onClick={() => navigate(`/movie-placement?projectId=${project.id}`)}
+                                onClick={() => navigate(`/movie-placement?projectId=${project.id}&step=4`, { state: { returnPath: '/profile' } })}
                               >
                                 {/* Delete button */}
                                 <button
@@ -1127,7 +1127,7 @@ export default function Profile() {
                             </button>
                             <span className="text-luxury-600">|</span>
                             <button 
-                              onClick={() => navigate('/ai-agent')}
+                              onClick={() => navigate('/ai-agent', { state: { returnPath: '/profile' } })}
                               className="text-sm text-primary hover:text-primary/80"
                             >
                               前往智能代理
@@ -1270,7 +1270,7 @@ export default function Profile() {
                     {/* Quick Entry Button */}
                     <div className="card p-4">
                       <button 
-                        onClick={() => navigate(`/ai-agent?projectId=${selectedProject.id}`)}
+                        onClick={() => navigate(`/ai-agent?projectId=${selectedProject.id}`, { state: { returnPath: '/profile' } })}
                         className="w-full flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-ambient-blue to-ambient-purple text-white rounded-xl hover:opacity-90 transition-opacity"
                       >
                         <Play className="w-5 h-5" />

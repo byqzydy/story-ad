@@ -159,11 +159,50 @@ export async function retryVideoTask(taskId: string): Promise<void> {
   }
 }
 
+/**
+ * Merge video clips into one
+ */
+export async function mergeVideoClips(taskId: string): Promise<{ mergedVideoUrl: string }> {
+  const response = await fetch(`${API_BASE_URL}/video-tasks/${taskId}/merge`, {
+    method: 'POST'
+  })
+  
+  const data = await response.json()
+  
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to merge videos')
+  }
+  
+  return data
+}
+
+/**
+ * Get merged video info
+ */
+export async function getMergedVideoInfo(taskId: string): Promise<{
+  isMerged: boolean
+  mergedVideoUrl?: string
+  hasClips: boolean
+  clipCount: number
+}> {
+  const response = await fetch(`${API_BASE_URL}/video-tasks/${taskId}/merged`)
+  
+  const data = await response.json()
+  
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to get merged video info')
+  }
+  
+  return data
+}
+
 export default {
   createVideoTask,
   getVideoTasks,
   getVideoTask,
   updateVideoTask,
   deleteVideoTask,
-  retryVideoTask
+  retryVideoTask,
+  mergeVideoClips,
+  getMergedVideoInfo
 }

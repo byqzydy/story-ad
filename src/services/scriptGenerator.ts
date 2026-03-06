@@ -10,7 +10,7 @@
 import type { MovieInfo } from './movieService';
 export type { MovieInfo };
 
-const MINIMAX_API_KEY = 'sk-cp-Hdpam27OvKPbjs7qUEB93_-mFSXB-ygC6wBcGuKJVCyD0AUSgzAYDt7t218wGW-1MkFLYXpDzvkIYpTv98kYbAefcp16tigaD78zubr8GkpaP5LgeZGZrl8'
+const MINIMAX_API_KEY = 'sk-cp-wFl7v2J720utZWLzakiS9qph1Awcm1J1mFqTW-jOYxP4kF2__ICl1yly_8Dahh6uklBs9Y-RdpesjYkA-oBkO0ArSxRbdYYsC9qB-KlL9aBe7F1dRBgryG0'
 const MINIMAX_MODEL = 'MiniMax-M2.5'
 const MINIMAX_API_URL = 'https://api.minimax.chat/v1/text/chatcompletion_v2'
 
@@ -66,7 +66,7 @@ async function callMiniMaxAPI(messages: MiniMaxMessage[]): Promise<string> {
  * Build system prompt for professional script generation
  */
 function buildSystemPrompt(): string {
-  return `你是虹忆坊专业编剧AI，专门创作电影产品植入同人剧本。
+  return `你是专业编剧AI，创作电影产品植入同人剧本。
 
 ## 你的任务
 根据提供的电影信息和产品信息，创作一个专业的同人演绎剧本，让产品广告无缝融入经典电影桥段。
@@ -75,41 +75,35 @@ function buildSystemPrompt(): string {
 1. **植入自然** - 产品必须像原生剧情一样自然出现，不能生硬植入广告
 2. **广告出镜** - 产品必须在剧本中出镜至少1次
 3. **功能体现** - 产品功能和特色必须通过人物行为和对话自然展现
-4. **人物描写** - 剧本中需要包含详细的人物动作、表情、场景描写，特别是人物的服装、容貌、配饰等外貌描写
+4. **人物描写** - 剧本中需要包含详细的人物动作、表情、场景描写
 5. **一致性** - 保证相同人物与场景在整个剧本中的一致性
 
-## 输出格式（必须使用此格式）
-【剧名】《电影名》同人广告剧本
+## 输出格式（必须严格按此格式输出）
 
-【产品】产品名称
+剧本名：xxx
+时长：约X分钟
 
-【时长】XX秒
+人物小传
+人物名（年龄）：人物性格描述。人物背景描述。
 
-【画幅】XX
+第一场
+场景：xxx 
+时间：夜，外/内
+（镜头描述）具体画面内容，人物动作和表情
+人物：（台词内容）
 
-【剧本】
-【场景1】场景标题 (时间范围)
-【时间】：XX:XX-XX:XX
-【地点】：具体场景地点
-【人物】：出场人物
-【人物描写】：详细描写人物的服装、容貌、发型、配饰、表情等外貌特征，包括服装颜色、款式、鞋子、发型、面部特征等
-【画面描述】：详细描述画面内容、人物动作、表情、场景氛围，以及产品如何自然出现在场景中展现产品功能
-【对话/独白】：
-人物A：对话内容1
-人物B：对话内容2
-
-【场景2】...
-
-【场景N】...
-
-【广告词】（可选）产品广告语或标语
+第二场
+场景：xxx 
+时间：夜，外/内
+（镜头描述）具体画面内容
+人物：（台词内容）
 
 ## 重要提示
-- 选择电影中最经典的桥段进行改编
-- 产品出现要符合场景逻辑，不要有单独的"产品展示"部分
-- 对话要符合人物性格
-- 人物外貌描写要详细具体，包括服装颜色、款式、发型、配饰等
-- 请直接输出完整剧本，不要添加其他解释`
+- 直接输出完整剧本，不要添加任何解释
+- 不要使用【】这样的标签
+- 使用"第一场""第二场"来区分场景
+- 使用"场景：""时间：""（特写）""（中景）""（全景）"这样的剧本格式
+- 对话格式：人物：（台词内容）`
 }
 
 /**

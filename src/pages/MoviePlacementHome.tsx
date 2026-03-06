@@ -126,7 +126,7 @@ export default function MoviePlacementHome() {
   }
   
   const handleAdTypeClick = (typeId: string) => {
-    navigate(`/movie-placement?type=${typeId}`)
+    navigate(`/movie-placement?type=${typeId}`, { state: { returnPath: '/movie-placement-home' } })
   }
 
   return (
@@ -218,7 +218,7 @@ export default function MoviePlacementHome() {
                 className="col-span-1"
               >
                 <div
-                  onClick={() => navigate('/movie-placement')}
+                  onClick={() => navigate('/movie-placement', { state: { returnPath: '/movie-placement-home' } })}
                   className="aspect-video rounded-xl border-2 border-dashed border-luxury-600 hover:border-primary flex flex-col items-center justify-center cursor-pointer transition-colors group bg-luxury-900/30"
                 >
                   <div className="w-12 h-12 rounded-full bg-luxury-800 group-hover:bg-primary/20 flex items-center justify-center mb-2 transition-colors">
@@ -238,7 +238,7 @@ export default function MoviePlacementHome() {
                   className="col-span-1"
                 >
                   <div
-                    onClick={() => navigate(`/movie-placement?projectId=${project.id}`)}
+                    onClick={() => navigate(`/movie-placement?projectId=${project.id}`, { state: { returnPath: '/movie-placement-home' } })}
                     className="aspect-video rounded-xl overflow-hidden cursor-pointer group relative border-2 border-transparent hover:border-primary transition-all"
                   >
                     {project.productInfo.images && project.productInfo.images[0] ? (
